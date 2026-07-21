@@ -2,385 +2,155 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>חוות דעת רחובות — ניהול מלאי</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-/* ══ RESET & BASE ══════════════════════════════════════════════ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --brand:    #1a3a52;
-  --brand-lt: #2471a3;
-  --accent:   #16a085;
-  --danger:   #c0392b;
-  --warn:     #d68910;
-  --ok:       #1e8449;
-  --bg:       #f4f6f8;
-  --surface:  #ffffff;
-  --border:   #e0e6ed;
-  --text:     #1a2332;
-  --muted:    #6b7c93;
-  --radius:   10px;
-  --shadow:   0 1px 4px rgba(0,0,0,0.08);
-}
-html, body { height: 100%; font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
-input, select, button, textarea { font-family: inherit; }
-button { cursor: pointer; }
-
-/* ══ APP SHELL ═════════════════════════════════════════════════ */
-.app { max-width: 440px; margin: 0 auto; min-height: 100vh; background: var(--surface); display: flex; flex-direction: column; position: relative; overflow: hidden; }
-
-/* ══ SCREENS ═══════════════════════════════════════════════════ */
-.screen { display: none; flex-direction: column; flex: 1; }
-.screen.active { display: flex; }
-
-/* ══ TOP BAR ════════════════════════════════════════════════════ */
-.topbar {
-  background: var(--brand);
-  color: #fff;
-  padding: 0 1.1rem;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-.topbar-logo { display: flex; align-items: center; gap: 8px; flex: 1; }
-.topbar-logo-img { width: 30px; height: 30px; border-radius: 6px; object-fit: contain; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-.topbar-text { display: flex; flex-direction: column; }
-.topbar-name { font-size: 13px; font-weight: 600; line-height: 1.2; }
-.topbar-sub  { font-size: 10px; opacity: 0.7; }
-.topbar-actions { display: flex; gap: 6px; }
-.topbar-btn { background: rgba(255,255,255,0.15); border: none; color: #fff; border-radius: 8px; padding: 5px 11px; font-size: 12px; white-space: nowrap; }
-.topbar-btn:hover { background: rgba(255,255,255,0.25); }
-
-/* ══ TABS ═══════════════════════════════════════════════════════ */
-.tab-row { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
-.tab { flex: 1; padding: 10px 4px; text-align: center; font-size: 12px; color: var(--muted); border: none; background: none; border-bottom: 2px solid transparent; transition: all .15s; }
-.tab.on { color: var(--brand); border-bottom-color: var(--brand); font-weight: 600; }
-
-/* ══ SCROLLABLE CONTENT ═════════════════════════════════════════ */
-.scroll { flex: 1; overflow-y: auto; padding: 0.9rem; -webkit-overflow-scrolling: touch; }
-.scroll.pb { padding-bottom: 5rem; }
-
-/* ══ CARDS ═══════════════════════════════════════════════════════ */
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1rem; margin-bottom: 9px; box-shadow: var(--shadow); }
-.card-sm { padding: 0.7rem 0.85rem; }
-
-/* ══ LOGIN SCREEN ════════════════════════════════════════════════ */
-.login-hero { background: linear-gradient(160deg, #1a3a52 0%, #16537e 100%); color: #fff; padding: 2.5rem 1.5rem 2rem; text-align: center; }
-.login-logo { width: 64px; height: 64px; margin: 0 auto 1rem; background: rgba(255,255,255,0.15); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; }
-.login-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 16px; }
-.login-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-.login-sub   { font-size: 13px; opacity: 0.75; }
-.login-body  { padding: 1.5rem; flex: 1; }
-.login-divider { display: flex; align-items: center; gap: 10px; margin: 1rem 0; color: var(--muted); font-size: 12px; }
-.login-divider::before, .login-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-
-/* ══ DEPT CARDS ══════════════════════════════════════════════════ */
-.dept-card { display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all .12s; }
-.dept-card:active { transform: scale(0.97); }
-.dept-icon { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
-.dept-info { flex: 1; }
-.dept-name { font-size: 14px; font-weight: 600; }
-.dept-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.dept-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-.dept-count { font-size: 11px; color: var(--muted); }
-
-/* ══ BADGES ══════════════════════════════════════════════════════ */
-.badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
-.badge-red    { background: #fde8e8; color: var(--danger); }
-.badge-orange { background: #fef5e7; color: var(--warn); }
-.badge-green  { background: #e8f8f0; color: var(--ok); }
-.badge-gray   { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
-.badge-blue   { background: #e8f0f7; color: var(--brand); }
-
-/* ══ PILLS (filter chips) ════════════════════════════════════════ */
-.pills { display: flex; gap: 6px; padding: 0.7rem 0.9rem; overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
-.pills::-webkit-scrollbar { display: none; }
-.pill { padding: 5px 13px; border-radius: 20px; font-size: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); white-space: nowrap; transition: all .12s; }
-.pill.on { background: var(--brand); color: #fff; border-color: var(--brand); font-weight: 600; }
-
-/* ══ SEARCH ══════════════════════════════════════════════════════ */
-.search-wrap { padding: 0 0.9rem 0.5rem; flex-shrink: 0; }
-.search { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 13px; outline: none; }
-.search:focus { border-color: var(--brand); background: var(--surface); }
-
-/* ══ PRODUCT CARDS ═══════════════════════════════════════════════ */
-.pcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem 0.9rem; margin-bottom: 7px; box-shadow: var(--shadow); }
-.pcard-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
-.pcard-name { font-size: 13px; font-weight: 600; flex: 1; line-height: 1.35; }
-.pcard-btns { display: flex; gap: 4px; flex-shrink: 0; }
-.icon-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 13px; color: var(--muted); transition: all .12s; }
-.icon-btn:hover { background: var(--bg); border-color: var(--muted); }
-.icon-btn.danger:hover { background: #fff0f0; border-color: var(--danger); color: var(--danger); }
-.ptags { display: flex; gap: 5px; flex-wrap: wrap; }
-.ptag { font-size: 11px; padding: 2px 7px; border-radius: 20px; background: var(--bg); border: 1px solid var(--border); color: var(--muted); }
-.ptag-dept { background: #e8f0f7; color: var(--brand); border-color: #c5d8ea; }
-
-/* ══ SECTION LABELS ══════════════════════════════════════════════ */
-.section-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin: 10px 0 6px; }
-
-/* ══ FORMS ═══════════════════════════════════════════════════════ */
-.f-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; display: block; }
-.f-input { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 13px; margin-bottom: 10px; outline: none; transition: border .15s; }
-.f-input:focus { border-color: var(--brand); background: var(--surface); }
-.f-select { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 13px; margin-bottom: 10px; outline: none; appearance: none; }
-.f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-/* ══ BUTTONS ═════════════════════════════════════════════════════ */
-.btn { border: none; border-radius: 10px; padding: 12px 16px; font-size: 14px; font-weight: 600; transition: all .15s; width: 100%; margin-bottom: 8px; }
-.btn-primary { background: var(--brand); color: #fff; }
-.btn-primary:hover { background: #152e42; }
-.btn-primary:active { transform: scale(0.98); }
-.btn-outline { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
-.btn-outline:hover { background: var(--bg); }
-.btn-danger { background: var(--danger); color: #fff; }
-
-/* ══ INVENTORY ITEM ROWS ═════════════════════════════════════════ */
-.irow { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem 0.9rem; margin-bottom: 8px; box-shadow: var(--shadow); }
-.irow-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 7px; }
-.status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; transition: background .3s; }
-.dot-ok   { background: var(--ok); }
-.dot-low  { background: var(--warn); }
-.dot-crit { background: var(--danger); }
-.dot-unk  { background: #bdc3c7; }
-.irow-name { font-size: 13px; font-weight: 600; flex: 1; line-height: 1.35; }
-.irow-tags { display: flex; gap: 5px; margin-bottom: 8px; flex-wrap: wrap; }
-.irow-input-row { display: flex; align-items: center; gap: 8px; }
-.irow-label { font-size: 12px; color: var(--muted); flex: 1; }
-.qty-input { width: 74px; text-align: center; padding: 7px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 16px; font-weight: 600; outline: none; transition: all .15s; }
-.qty-input:focus { border-color: var(--brand); background: var(--surface); box-shadow: 0 0 0 2px rgba(26,58,82,.12); }
-.qty-unit { font-size: 11px; color: var(--muted); }
-
-/* ══ FAB ══════════════════════════════════════════════════════════ */
-.fab-wrap { padding: 0.85rem; flex-shrink: 0; background: var(--surface); border-top: 1px solid var(--border); }
-
-/* ══ REPORT CARDS ════════════════════════════════════════════════ */
-.report-card { display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all .12s; }
-.report-card:hover { border-color: var(--brand); }
-.report-icon { font-size: 22px; flex-shrink: 0; }
-.report-info { flex: 1; }
-.report-title { font-size: 13px; font-weight: 600; }
-.report-meta  { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.report-badges { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-start; }
-
-/* ══ ALERT BANNER ════════════════════════════════════════════════ */
-.alert { background: #fef5e7; border: 1px solid #f0c040; border-radius: var(--radius); padding: 0.75rem 1rem; margin-bottom: 10px; font-size: 12px; color: #7d6608; display: flex; gap: 8px; align-items: flex-start; }
-
-/* ══ STATS ═══════════════════════════════════════════════════════ */
-.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem; text-align: center; box-shadow: var(--shadow); }
-.stat-num { font-size: 26px; font-weight: 700; color: var(--brand); }
-.stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
-
-/* ══ PROGRESS BAR ════════════════════════════════════════════════ */
-.progress-row { margin-bottom: 12px; }
-.progress-top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
-.progress-bar { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
-.progress-fill { height: 100%; background: var(--brand); border-radius: 3px; transition: width .5s ease; }
-
-/* ══ MODALS ══════════════════════════════════════════════════════ */
-.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: flex-end; justify-content: center; z-index: 100; }
-.modal-bg.open { display: flex; animation: fadein .15s ease; }
-@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
-.modal { background: var(--surface); border-radius: 18px 18px 0 0; padding: 1.25rem; width: 100%; max-width: 440px; max-height: 88vh; overflow-y: auto; animation: slideup .2s ease; }
-@keyframes slideup { from { transform: translateY(20px); } to { transform: translateY(0); } }
-.modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 1rem; }
-.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 1rem; }
-.modal-actions { display: flex; gap: 8px; margin-top: 6px; }
-.modal-actions .btn { margin-bottom: 0; }
-
-/* ══ REPORT DETAIL ═══════════════════════════════════════════════ */
-.rdetail-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-.rdetail-row:last-child { border: none; }
-.rv-ok   { color: var(--ok);   font-weight: 600; }
-.rv-low  { color: var(--warn); font-weight: 600; }
-.rv-crit { color: var(--danger); font-weight: 600; }
-
-/* ══ MOVE DEPT LIST ══════════════════════════════════════════════ */
-.move-btn { padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 13px; text-align: right; width: 100%; margin-bottom: 6px; transition: all .12s; }
-.move-btn:hover { background: #e8f0f7; border-color: var(--brand); }
-.move-btn.cur { opacity: .45; cursor: default; pointer-events: none; }
-
-/* ══ EMPTY STATE ═════════════════════════════════════════════════ */
-.empty { text-align: center; padding: 2.5rem 1rem; color: var(--muted); }
-.empty-icon { font-size: 38px; margin-bottom: 10px; }
-.empty-text { font-size: 13px; line-height: 1.6; }
-
-/* ══ SUCCESS SCREEN ══════════════════════════════════════════════ */
-.success-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; }
-.success-icon { font-size: 56px; margin-bottom: 1rem; }
-.success-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
-.success-sub { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 1.5rem; }
-
-/* ══ LOADER ══════════════════════════════════════════════════════ */
-.loader { display: flex; align-items: center; justify-content: center; padding: 2rem; }
-.spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--brand); border-radius: 50%; animation: spin .7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ══ TOAST ════════════════════════════════════════════════════════ */
-.toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: var(--brand); color: #fff; padding: 9px 20px; border-radius: 20px; font-size: 13px; z-index: 200; white-space: nowrap; pointer-events: none; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-.toast.show { display: block; animation: ft 2.4s ease forwards; }
-@keyframes ft { 0%{opacity:0;transform:translateX(-50%) translateY(8px)} 12%{opacity:1;transform:translateX(-50%) translateY(0)} 80%{opacity:1} 100%{opacity:0} }
-
-/* ══ CONNECTION ERROR ════════════════════════════════════════════ */
-.conn-error { background: #fff0f0; border: 1px solid #f5c6c6; border-radius: var(--radius); padding: .75rem 1rem; font-size: 12px; color: var(--danger); margin-bottom: 10px; display: none; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f0f4f8;direction:rtl;font-size:14px}
+.app{max-width:440px;margin:0 auto;background:#fff;min-height:100vh;display:flex;flex-direction:column}
+.screen{display:none;flex-direction:column;flex:1}
+.screen.active{display:flex}
+.hero{background:#1a3a52;color:#fff;padding:2rem 1.5rem;text-align:center}
+.hero h1{font-size:22px;margin-bottom:6px}
+.hero p{font-size:13px;opacity:.8}
+.body{padding:1.5rem;flex:1}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px;font-family:Arial,sans-serif}
+.btn-primary{background:#1a3a52;color:#fff}
+.btn-outline{background:#fff;color:#1a3a52;border:1.5px solid #1a3a52}
+select{width:100%;padding:10px;border:1.5px solid #cdd5df;border-radius:8px;font-size:14px;margin-bottom:12px;font-family:Arial,sans-serif}
+.topbar{background:#1a3a52;color:#fff;padding:.9rem 1.1rem;display:flex;align-items:center;justify-content:space-between}
+.topbar h2{font-size:15px;font-weight:600}
+.topbar-sub{font-size:11px;opacity:.7}
+.topbar-btn{background:rgba(255,255,255,.2);border:none;color:#fff;padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px}
+.tabs{display:flex;border-bottom:1px solid #e0e6ed}
+.tab{flex:1;padding:10px;text-align:center;font-size:12px;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:#6b7c93}
+.tab.on{color:#1a3a52;border-bottom-color:#1a3a52;font-weight:600}
+.scroll{flex:1;overflow-y:auto;padding:.9rem}
+.card{background:#fff;border:1px solid #e0e6ed;border-radius:10px;padding:.9rem;margin-bottom:9px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.dept-row{display:flex;align-items:center;gap:12px;cursor:pointer}
+.dept-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.dept-name{font-size:14px;font-weight:600}
+.dept-sub{font-size:11px;color:#6b7c93;margin-top:2px}
+.badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+.badge-red{background:#fde8e8;color:#c0392b}
+.badge-green{background:#e8f8f0;color:#1e8449}
+.badge-gray{background:#f0f4f8;color:#6b7c93}
+.pcard{background:#fff;border:1px solid #e0e6ed;border-radius:10px;padding:.75rem .9rem;margin-bottom:7px}
+.pcard-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}
+.pcard-name{font-size:13px;font-weight:600;flex:1}
+.pcard-btns{display:flex;gap:4px}
+.ibtn{background:none;border:1px solid #e0e6ed;border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:#6b7c93}
+.ibtn.del:hover{background:#fff0f0;color:#c0392b}
+.ptags{display:flex;gap:5px;flex-wrap:wrap}
+.ptag{font-size:11px;padding:2px 7px;border-radius:20px;background:#f0f4f8;border:1px solid #e0e6ed;color:#6b7c93}
+.ptag-dept{background:#e8f0f7;color:#1a3a52}
+.irow{background:#fff;border:1px solid #e0e6ed;border-radius:10px;padding:.75rem .9rem;margin-bottom:8px}
+.irow-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.dot-ok{background:#1e8449}
+.dot-low{background:#d68910}
+.dot-crit{background:#c0392b}
+.dot-unk{background:#bdc3c7}
+.irow-name{font-size:13px;font-weight:600;flex:1}
+.irow-tags{display:flex;gap:5px;margin-bottom:8px}
+.irow-footer{display:flex;align-items:center;gap:8px}
+.irow-label{font-size:12px;color:#6b7c93;flex:1}
+.qty{width:74px;text-align:center;padding:7px;border-radius:8px;border:1px solid #cdd5df;font-size:16px;font-weight:600;font-family:Arial,sans-serif}
+.qty:focus{outline:none;border-color:#1a3a52}
+.qty-unit{font-size:11px;color:#6b7c93}
+.fab{padding:.85rem;border-top:1px solid #e0e6ed;flex-shrink:0}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:100}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:18px 18px 0 0;padding:1.25rem;width:100%;max-width:440px;max-height:88vh;overflow-y:auto}
+.modal-handle{width:36px;height:4px;background:#e0e6ed;border-radius:2px;margin:0 auto 1rem}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:1rem}
+.f-label{font-size:12px;color:#6b7c93;margin-bottom:4px;display:block}
+.f-input{width:100%;padding:9px 12px;border:1px solid #cdd5df;border-radius:8px;font-size:13px;margin-bottom:10px;font-family:Arial,sans-serif}
+.f-input:focus{outline:none;border-color:#1a3a52}
+.f-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-actions{display:flex;gap:8px;margin-top:4px}
+.modal-actions .btn{margin:0}
+.success-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a3a52;color:#fff;padding:9px 20px;border-radius:20px;font-size:13px;z-index:200;display:none;white-space:nowrap}
+.toast.show{display:block;animation:ft 2.5s ease forwards}
+@keyframes ft{0%{opacity:0}12%{opacity:1}80%{opacity:1}100%{opacity:0}}
+.empty{text-align:center;padding:2.5rem 1rem;color:#6b7c93}
+.section-label{font-size:11px;font-weight:600;color:#6b7c93;text-transform:uppercase;letter-spacing:.05em;margin:10px 0 6px}
+.rrow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e0e6ed;font-size:13px}
+.rrow:last-child{border:none}
+.rv-ok{color:#1e8449;font-weight:600}
+.rv-low{color:#d68910;font-weight:600}
+.rv-crit{color:#c0392b;font-weight:600}
+.alert{background:#fef5e7;border:1px solid #f0c040;border-radius:10px;padding:.75rem 1rem;margin-bottom:10px;font-size:12px;color:#7d6608}
+.move-btn{width:100%;padding:10px 14px;border:1px solid #e0e6ed;border-radius:8px;background:#f0f4f8;font-size:13px;cursor:pointer;text-align:right;margin-bottom:6px}
+.move-btn:hover{background:#e8f0f7;border-color:#1a3a52}
+.move-btn.cur{opacity:.4;cursor:default;pointer-events:none}
 </style>
 </head>
 <body>
-<div class="app" id="app">
+<div class="app">
 
-<!-- ════════════════════════════════════════════════════════
-     LOGIN
-════════════════════════════════════════════════════════ -->
 <div id="s-login" class="screen active">
-  <div class="login-hero">
-    <div class="login-logo" id="hero-logo">🐾</div>
-    <div class="login-title">חוות דעת רחובות</div>
-    <div class="login-sub">מערכת ניהול מלאי</div>
+  <div class="hero">
+    <div style="font-size:48px;margin-bottom:12px">🐾</div>
+    <h1>חוות דעת רחובות</h1>
+    <p>מערכת ניהול מלאי</p>
   </div>
-  <div class="login-body">
-    <div class="conn-error" id="conn-error">⚠️ שגיאה בחיבור למסד הנתונים. בדקי את הגדרות Supabase.</div>
-    <button class="btn btn-primary" onclick="loginAs('admin')">כניסת אחראית מלאים</button>
-    <div class="login-divider">או</div>
+  <div class="body">
+    <button class="btn btn-primary" id="btn-admin">כניסת אחראית מלאים</button>
+    <div style="text-align:center;color:#6b7c93;margin:10px 0;font-size:13px">או</div>
     <label class="f-label">כניסת סגנית — בחרי מחלקה</label>
-    <select class="f-select" id="dept-select" style="margin-bottom:10px">
+    <select id="dept-select">
       <option value="reception">קבלה</option>
       <option value="surgery">חדר ניתוח</option>
       <option value="hospitalization">אשפוז ומעבדה</option>
       <option value="community">רפואת קהילה וחדרים</option>
     </select>
-    <button class="btn btn-outline" onclick="loginAs('deputy')">כניסה לספירת מלאי</button>
-    <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:1rem">
-      גרסה 1.0 · חוות דעת רחובות
-    </p>
+    <button class="btn btn-outline" id="btn-deputy">כניסה לספירת מלאי</button>
+    <p style="font-size:11px;color:#6b7c93;text-align:center;margin-top:1rem">גרסה 1.0 · חוות דעת רחובות</p>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════════════════
-     ADMIN
-════════════════════════════════════════════════════════ -->
 <div id="s-admin" class="screen">
   <div class="topbar">
-    <div class="topbar-logo">
-      <div class="topbar-logo-img" id="topbar-logo-img">🐾</div>
-      <div class="topbar-text">
-        <div class="topbar-name">חוות דעת רחובות</div>
-        <div class="topbar-sub">אחראית מלאים</div>
-      </div>
-    </div>
-    <div class="topbar-actions">
-      <button class="topbar-btn" onclick="logout()">יציאה</button>
-    </div>
+    <div><div class="topbar-sub">אחראית מלאים</div><h2>חוות דעת רחובות</h2></div>
+    <button class="topbar-btn" id="btn-logout-admin">יציאה</button>
   </div>
-  <div class="tab-row">
-    <button class="tab on" onclick="adminTab('reports',this)">דיווחים</button>
-    <button class="tab" onclick="adminTab('products',this)">מוצרים</button>
-    <button class="tab" onclick="adminTab('stats',this)">סטטיסטיקה</button>
+  <div class="tabs">
+    <button class="tab on" id="tab-reports-btn">דיווחים</button>
+    <button class="tab" id="tab-products-btn">מוצרים</button>
   </div>
-
-  <!-- REPORTS TAB -->
-  <div id="at-reports" class="scroll pb">
-    <div id="alerts-area"></div>
-    <div id="reports-area"><div class="loader"><div class="spinner"></div></div></div>
-  </div>
-
-  <!-- PRODUCTS TAB -->
-  <div id="at-products" style="display:none;flex:1;flex-direction:column">
-    <div class="pills">
-      <button class="pill on" onclick="fDept('all',this)">הכול</button>
-      <button class="pill" onclick="fDept('reception',this)">קבלה</button>
-      <button class="pill" onclick="fDept('surgery',this)">ניתוח</button>
-      <button class="pill" onclick="fDept('hospitalization',this)">אשפוז</button>
-      <button class="pill" onclick="fDept('community',this)">קהילה</button>
-    </div>
-    <div class="search-wrap">
-      <input class="search" type="text" placeholder="חיפוש מוצר..." oninput="renderProducts()" id="p-search">
-    </div>
-    <div class="scroll pb" id="p-list"></div>
-    <div class="fab-wrap">
-      <button class="btn btn-primary" style="margin:0" onclick="openAdd()">+ הוסף מוצר</button>
-    </div>
-  </div>
-
-  <!-- STATS TAB -->
-  <div id="at-stats" class="scroll" style="display:none">
-    <div class="stat-grid">
-      <div class="stat-card"><div class="stat-num" id="st-total">—</div><div class="stat-label">מוצרים</div></div>
-      <div class="stat-card"><div class="stat-num" id="st-reports-count">—</div><div class="stat-label">דיווחים השבוע</div></div>
-      <div class="stat-card"><div class="stat-num" id="st-critical">—</div><div class="stat-label" style="color:var(--danger)">פריטים קריטיים</div></div>
-      <div class="stat-card"><div class="stat-num" id="st-depts">4</div><div class="stat-label">מחלקות</div></div>
-    </div>
-    <div class="section-label">פריטים לפי מחלקה</div>
-    <div id="st-breakdown"></div>
+  <div id="tab-reports" class="scroll"><div class="empty">טוען...</div></div>
+  <div id="tab-products" style="display:none;flex:1;flex-direction:column;overflow:hidden">
+    <div style="padding:.75rem .9rem .25rem"><input class="f-input" id="p-search" type="text" placeholder="חיפוש..." style="margin:0"></div>
+    <div class="scroll" id="p-list"></div>
+    <div class="fab"><button class="btn btn-primary" id="btn-add" style="margin:0">+ הוסף מוצר</button></div>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════════════════
-     DEPUTY — COUNT
-════════════════════════════════════════════════════════ -->
 <div id="s-deputy" class="screen">
   <div class="topbar">
-    <div class="topbar-logo">
-      <div class="topbar-logo-img" id="dep-topbar-logo">🐾</div>
-      <div class="topbar-text">
-        <div class="topbar-name" id="dep-title">קבלה</div>
-        <div class="topbar-sub">ספירת מלאי שבועית</div>
-      </div>
-    </div>
-    <button class="topbar-btn" onclick="logout()">יציאה</button>
+    <div><div class="topbar-sub">ספירת מלאי</div><h2 id="dep-title">קבלה</h2></div>
+    <button class="topbar-btn" id="btn-logout-deputy">יציאה</button>
   </div>
-
-  <div class="pills">
-    <button class="pill on" onclick="depF('all',this)">הכול</button>
-    <button class="pill" onclick="depF('crit',this)">חסרים</button>
-    <button class="pill" onclick="depF('low',this)">נמוך</button>
-    <button class="pill" onclick="depF('ok',this)">תקין</button>
-  </div>
-
-  <div class="scroll pb" id="dep-items">
-    <div class="loader"><div class="spinner"></div></div>
-  </div>
-
-  <div class="fab-wrap">
-    <button class="btn btn-primary" style="margin:0" id="submit-btn" onclick="submitReport()">שלח דיווח מלאי</button>
-  </div>
+  <div class="scroll" id="dep-items"></div>
+  <div class="fab"><button class="btn btn-primary" id="btn-submit" style="margin:0">שלח דיווח מלאי</button></div>
 </div>
 
-<!-- ════════════════════════════════════════════════════════
-     SUCCESS
-════════════════════════════════════════════════════════ -->
 <div id="s-success" class="screen">
-  <div class="topbar">
-    <div class="topbar-logo">
-      <div class="topbar-logo-img">🐾</div>
-      <div class="topbar-text">
-        <div class="topbar-name">חוות דעת רחובות</div>
-        <div class="topbar-sub">דיווח נשלח</div>
-      </div>
-    </div>
-  </div>
+  <div class="topbar"><h2>דיווח נשלח</h2></div>
   <div class="success-body">
-    <div class="success-icon">✅</div>
-    <div class="success-title">הדיווח נשלח!</div>
-    <div class="success-sub">אחראית המלאים קיבלה את ספירת המלאי<br>ותטפל בהזמנות בהתאם</div>
-    <div class="card" style="width:100%;text-align:right" id="success-summary"></div>
-    <button class="btn btn-outline" style="margin-top:1rem;width:100%" onclick="logout()">חזרה לדף הבית</button>
+    <div style="font-size:56px;margin-bottom:1rem">✅</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:8px">הדיווח נשלח בהצלחה!</div>
+    <div style="font-size:13px;color:#6b7c93;margin-bottom:1.5rem">אחראית המלאים קיבלה את הספירה</div>
+    <div class="card" id="success-summary" style="width:100%;text-align:right"></div>
+    <button class="btn btn-outline" id="btn-back" style="margin-top:1rem">חזרה לדף הבית</button>
   </div>
 </div>
 
-</div><!-- /app -->
+</div>
 
-<!-- ════════════════════════════════════════════════════════
-     MODALS
-════════════════════════════════════════════════════════ -->
-
-<!-- Add/Edit Product -->
 <div class="modal-bg" id="m-product">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -389,550 +159,290 @@ button { cursor: pointer; }
     <input class="f-input" id="f-name" placeholder="Frontline Spot On Cat">
     <label class="f-label">קטגוריה</label>
     <input class="f-input" id="f-cat" placeholder="נגד פרעושים">
-    <label class="f-label">מחלקה אחראית</label>
-    <select class="f-select" id="f-dept">
+    <label class="f-label">מחלקה</label>
+    <select class="f-input" id="f-dept" style="margin-bottom:10px">
       <option value="reception">קבלה</option>
       <option value="surgery">חדר ניתוח</option>
       <option value="hospitalization">אשפוז ומעבדה</option>
       <option value="community">רפואת קהילה וחדרים</option>
     </select>
     <div class="f-grid">
-      <div><label class="f-label">מלאי מינימום</label><input class="f-input" id="f-min" type="number" min="1" placeholder="10"></div>
-      <div><label class="f-label">יחידת מידה</label><input class="f-input" id="f-unit" placeholder="יח'"></div>
+      <div><label class="f-label">מינימום</label><input class="f-input" id="f-min" type="number" min="1" placeholder="10"></div>
+      <div><label class="f-label">יחידה</label><input class="f-input" id="f-unit" placeholder="יח'"></div>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeM('m-product')">ביטול</button>
-      <button class="btn btn-primary" id="save-btn" onclick="saveProduct()">שמור מוצר</button>
+      <button class="btn btn-outline" id="btn-cancel-product">ביטול</button>
+      <button class="btn btn-primary" id="btn-save-product">שמור</button>
     </div>
   </div>
 </div>
 
-<!-- Move Dept -->
 <div class="modal-bg" id="m-move">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">העברה למחלקה</div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:1rem" id="m-move-name"></p>
+    <p style="font-size:12px;color:#6b7c93;margin-bottom:1rem" id="m-move-name"></p>
     <div id="m-move-list"></div>
-    <button class="btn btn-outline" onclick="closeM('m-move')">ביטול</button>
+    <button class="btn btn-outline" id="btn-cancel-move">ביטול</button>
   </div>
 </div>
 
-<!-- Delete -->
 <div class="modal-bg" id="m-delete">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">הסרת מוצר</div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:6px">את בטוחה שברצונך להסיר את:</p>
+    <p style="font-size:13px;color:#6b7c93;margin-bottom:6px">להסיר את:</p>
     <p style="font-size:14px;font-weight:700;margin-bottom:1rem" id="m-del-name"></p>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeM('m-delete')">ביטול</button>
-      <button class="btn btn-danger" onclick="confirmDel()">הסר</button>
+      <button class="btn btn-outline" id="btn-cancel-del">ביטול</button>
+      <button class="btn" style="background:#c0392b;color:#fff" id="btn-confirm-del">הסר</button>
     </div>
   </div>
 </div>
 
-<!-- Report Detail -->
 <div class="modal-bg" id="m-report">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="m-report-title">פרטי דיווח</div>
     <div id="m-report-content"></div>
-    <button class="btn btn-outline" style="margin-top:1rem" onclick="closeM('m-report')">סגור</button>
+    <button class="btn btn-outline" id="btn-close-report" style="margin-top:1rem">סגור</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<!-- JAVASCRIPT -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ══════════════════════════════════════════════════════════
-//  ⚙️  הגדרות Supabase — החליפי כאן בנתונים שלך!
-// ══════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://ynjfphgtgtesblvrxhpf.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_QXUxKG4FQi7EaWYPdpavzQ_ESGTzRS8';
-// ══════════════════════════════════════════════════════════
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const DEMO_MODE = (SUPABASE_URL === 'https://ynjfphgtgtesblvrxhpf.supabase.co');
-let db = null;
+const DEPTS = {reception:'קבלה',surgery:'חדר ניתוח',hospitalization:'אשפוז ומעבדה',community:'רפואת קהילה וחדרים'};
+const ICONS = {reception:'💊',surgery:'🔬',hospitalization:'🧪',community:'🏠'};
 
-if (!DEMO_MODE) {
-  db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-}
+let products = [], reports = [], depValues = {}, currentDept = '', editId = null, delId = null, moveId = null;
 
-// ══ CONSTANTS ══════════════════════════════════════════════
-const DEPTS = {
-  reception:       'קבלה',
-  surgery:         'חדר ניתוח',
-  hospitalization: 'אשפוז ומעבדה',
-  community:       'רפואת קהילה וחדרים'
-};
-const ICONS = { reception:'💊', surgery:'🔬', hospitalization:'🧪', community:'🏠' };
-const BG    = { reception:'#fdf2f8', surgery:'#eaf5fb', hospitalization:'#eafaf1', community:'#fef9e7' };
-
-// ══ STATE ══════════════════════════════════════════════════
-let products = [];
-let reports  = [];
-let depValues = {};
-let depFilter_ = 'all';
-let curDeptFilter = 'all';
-let editId = null, delId = null, moveId = null;
-let currentDept = '';
-let nextLocalId = 1000;
-
-// ══ DEMO DATA ══════════════════════════════════════════════
-const DEMO_PRODUCTS = [
-  {id:1,name:"Frontline Spot On Cat",category:"נגד פרעושים",department:"reception",min_stock:12,unit:"יח'"},
-  {id:2,name:"Advocate Dog Large",category:"נגד פרעושים",department:"reception",min_stock:10,unit:"יח'"},
-  {id:3,name:"Bravecto Dog M",category:"נגד פרעושים",department:"reception",min_stock:8,unit:"יח'"},
-  {id:4,name:"Simparica 5-10kg",category:"נגד פרעושים",department:"reception",min_stock:15,unit:"יח'"},
-  {id:5,name:"Hill's I/D כלב 1.5 ק\"ג",category:"מזון רפואי",department:"reception",min_stock:6,unit:"שקים"},
-  {id:6,name:"Hill's A/D שימורים 200 גרם",category:"מזון רפואי",department:"reception",min_stock:24,unit:"יח'"},
-  {id:7,name:"Apoquel 16mg",category:"תרופת מרשם",department:"reception",min_stock:30,unit:"טב'"},
-  {id:8,name:"Drontal Plus Cat",category:"תרופת מרשם",department:"reception",min_stock:20,unit:"טב'"},
-  {id:9,name:"מחטים G21 ירוק 100 יח'",category:"מחטים",department:"surgery",min_stock:20,unit:"קופ'"},
-  {id:10,name:"מחטים G18 ורוד 100 יח'",category:"מחטים",department:"surgery",min_stock:15,unit:"קופ'"},
-  {id:11,name:"מחטים G23 כחול 100 יח'",category:"מחטים",department:"surgery",min_stock:10,unit:"קופ'"},
-  {id:12,name:"מזרק 3 מ\"ל LATEX-FREE",category:"מזרקים",department:"surgery",min_stock:12,unit:"קופ'"},
-  {id:13,name:"כפפות ניתוח Triflex 6.5",category:"כפפות ניתוח",department:"surgery",min_stock:5,unit:"קופ'"},
-  {id:14,name:"Isoflurane 250ml",category:"חומרי הרדמה",department:"surgery",min_stock:3,unit:"בקבוקים"},
-  {id:15,name:"Cefazolin 1g Vials",category:"אנטיביוטיקה",department:"surgery",min_stock:10,unit:"יח'"},
-  {id:16,name:"Lactated Ringer 1L",category:"נוזלים",department:"hospitalization",min_stock:80,unit:"שקיות"},
-  {id:17,name:"NaCl 0.9% 1L",category:"נוזלים",department:"hospitalization",min_stock:20,unit:"שקיות"},
-  {id:18,name:"ביורטה וולוסט 150מ\"ל",category:"ציוד עירוי",department:"hospitalization",min_stock:60,unit:"יח'"},
-  {id:19,name:"Pantoprazole 40mg INJ",category:"תרופות IV",department:"hospitalization",min_stock:20,unit:"יח'"},
-  {id:20,name:"Catalyst 17 CHEM",category:"מעבדה",department:"hospitalization",min_stock:6,unit:"קיטים"},
-  {id:21,name:"Snap Parvo 5 בדיקות",category:"מעבדה",department:"hospitalization",min_stock:2,unit:"קיטים"},
-  {id:22,name:"Vanguard Plus L4",category:"חיסונים",department:"community",min_stock:20,unit:"מנות"},
-  {id:23,name:"Felocell 4",category:"חיסונים",department:"community",min_stock:15,unit:"מנות"},
-  {id:24,name:"Nobivac Rabies",category:"חיסונים",department:"community",min_stock:10,unit:"מנות"},
-  {id:25,name:"פד גזה לא סטרילי פס כחול",category:"חבישות",department:"community",min_stock:15,unit:"חבילות"},
-  {id:26,name:"ספטדין תרחיץ 500 מ\"ל",category:"ניקיון",department:"community",min_stock:8,unit:"בקבוקים"},
-  {id:27,name:"כפפות ניטריל M 1/100",category:"כפפות",department:"community",min_stock:8,unit:"קופ'"},
-  {id:28,name:"נייר תעשייתי 1173",category:"ציוד חדרים",department:"community",min_stock:6,unit:"גלילים"},
-];
-
-// ══ HELPERS ════════════════════════════════════════════════
-function show(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show';
-  setTimeout(() => t.className = 'toast', 2500);
-}
+function show(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function toast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show'; setTimeout(()=>t.className='toast',2600); }
+function openM(id) { document.getElementById(id).classList.add('open'); }
 function closeM(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-bg').forEach(m =>
-  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); })
-);
-function getStatus(val, min) {
-  if (val === '' || val === null || val === undefined) return 'unk';
-  const n = parseInt(val);
-  if (isNaN(n)) return 'unk';
-  if (n === 0 || n < min * 0.4) return 'crit';
-  if (n < min * 0.7) return 'low';
-  return 'ok';
-}
-function fmtTime(ts) {
-  return new Date(ts).toLocaleString('he-IL', {hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'});
-}
+function getStatus(v,min) { if(v===''||v===null||v===undefined)return'unk'; const n=parseInt(v); if(isNaN(n))return'unk'; if(n<min*.4)return'crit'; if(n<min*.7)return'low'; return'ok'; }
 
-// ══ DATA LAYER ══════════════════════════════════════════════
 async function loadProducts() {
-  if (DEMO_MODE) { products = [...DEMO_PRODUCTS]; return; }
-  const { data, error } = await db.from('products').select('*').eq('is_active', true).order('department').order('name');
-  if (error) { console.error(error); document.getElementById('conn-error').style.display='block'; return; }
-  products = data || [];
+  const {data} = await db.from('products').select('*').eq('is_active',true).order('department').order('name');
+  products = data||[];
 }
-
 async function loadReports() {
-  if (DEMO_MODE) { reports = []; return; }
-  const since = new Date(Date.now() - 7*24*60*60*1000).toISOString();
-  const { data } = await db.from('inventory_reports').select('*, report_items(*)').gte('created_at', since).order('created_at', {ascending:false});
-  reports = data || [];
+  const since = new Date(Date.now()-7*24*60*60*1000).toISOString();
+  const {data} = await db.from('inventory_reports').select('*,report_items(*)').gte('created_at',since).order('created_at',{ascending:false});
+  reports = data||[];
 }
 
-async function dbAddProduct(p) {
-  if (DEMO_MODE) { p.id = nextLocalId++; products.push(p); return p; }
-  const { data, error } = await db.from('products').insert({
-    name: p.name, category: p.category, department: p.department,
-    min_stock: p.min_stock, unit: p.unit
-  }).select().single();
-  if (error) throw error;
-  return data;
-}
+// BUTTONS
+document.getElementById('btn-admin').onclick = async function() {
+  show('s-admin');
+  await loadProducts(); await loadReports();
+  renderReports(); renderProducts();
+};
+document.getElementById('btn-deputy').onclick = async function() {
+  currentDept = document.getElementById('dept-select').value;
+  depValues = {};
+  document.getElementById('dep-title').textContent = DEPTS[currentDept];
+  show('s-deputy');
+  await loadProducts();
+  renderDepItems();
+};
+document.getElementById('btn-logout-admin').onclick = function() { show('s-login'); };
+document.getElementById('btn-logout-deputy').onclick = function() { show('s-login'); };
+document.getElementById('btn-back').onclick = function() { show('s-login'); };
+document.getElementById('btn-add').onclick = function() {
+  editId=null;
+  document.getElementById('m-product-title').textContent='הוספת מוצר';
+  ['f-name','f-cat','f-min','f-unit'].forEach(i=>document.getElementById(i).value='');
+  openM('m-product');
+};
+document.getElementById('btn-cancel-product').onclick = function() { closeM('m-product'); };
+document.getElementById('btn-cancel-move').onclick = function() { closeM('m-move'); };
+document.getElementById('btn-cancel-del').onclick = function() { closeM('m-delete'); };
+document.getElementById('btn-close-report').onclick = function() { closeM('m-report'); };
+document.getElementById('p-search').oninput = renderProducts;
 
-async function dbUpdateProduct(p) {
-  if (DEMO_MODE) { const i = products.findIndex(x => x.id === p.id); if (i>=0) products[i] = p; return; }
-  const { error } = await db.from('products').update({
-    name: p.name, category: p.category, department: p.department,
-    min_stock: p.min_stock, unit: p.unit
-  }).eq('id', p.id);
-  if (error) throw error;
-}
+document.getElementById('tab-reports-btn').onclick = function() {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on')); this.classList.add('on');
+  document.getElementById('tab-reports').style.display='block';
+  document.getElementById('tab-products').style.display='none';
+};
+document.getElementById('tab-products-btn').onclick = function() {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on')); this.classList.add('on');
+  document.getElementById('tab-reports').style.display='none';
+  document.getElementById('tab-products').style.display='flex';
+};
 
-async function dbDeleteProduct(id) {
-  if (DEMO_MODE) { products = products.filter(p => p.id !== id); return; }
-  await db.from('products').update({ is_active: false }).eq('id', id);
-  products = products.filter(p => p.id !== id);
-}
-
-async function dbSubmitReport(reportData, items) {
-  if (DEMO_MODE) {
-    reportData.id = Date.now();
-    reportData.created_at = new Date().toISOString();
-    reportData.report_items = items;
-    reports.unshift(reportData);
-    return reportData;
-  }
-  const { data: rep, error } = await db.from('inventory_reports').insert(reportData).select().single();
-  if (error) throw error;
-  const rowItems = items.map(it => ({ ...it, report_id: rep.id }));
-  await db.from('report_items').insert(rowItems);
-  return rep;
-}
-
-// ══ LOGIN / LOGOUT ══════════════════════════════════════════
-async function loginAs(role) {
-  if (role === 'admin') {
-    show('s-admin');
-    await loadProducts();
-    await loadReports();
-    renderAdminReports();
-    renderProducts();
+document.getElementById('btn-save-product').onclick = async function() {
+  const name=document.getElementById('f-name').value.trim();
+  const cat=document.getElementById('f-cat').value.trim();
+  const dept=document.getElementById('f-dept').value;
+  const min=parseInt(document.getElementById('f-min').value)||1;
+  const unit=document.getElementById('f-unit').value.trim()||"יח'";
+  if(!name){document.getElementById('f-name').focus();return;}
+  const dup=products.find(p=>p.name.toLowerCase()===name.toLowerCase()&&p.id!=editId);
+  if(dup){toast('מוצר זה כבר קיים ב'+DEPTS[dup.department]);return;}
+  if(editId) {
+    await db.from('products').update({name,category:cat,department:dept,min_stock:min,unit}).eq('id',editId);
+    toast('עודכן');
   } else {
-    currentDept = document.getElementById('dept-select').value;
-    depValues = {}; depFilter_ = 'all';
-    document.getElementById('dep-title').textContent = DEPTS[currentDept];
-    document.querySelectorAll('#s-deputy .pill').forEach((p,i) => p.classList.toggle('on', i===0));
-    show('s-deputy');
-    await loadProducts();
-    renderDepItems();
+    await db.from('products').insert({name,category:cat,department:dept,min_stock:min,unit});
+    toast('נוסף');
   }
-}
-function logout() {
-  depValues = {}; reports = []; products = [];
-  show('s-login');
-}
+  closeM('m-product'); await loadProducts(); renderProducts();
+};
 
-// ══ ADMIN: REPORTS TAB ══════════════════════════════════════
-function renderAdminReports() {
-  const aa = document.getElementById('alerts-area');
-  const ra = document.getElementById('reports-area');
-  if (!reports.length) {
-    aa.innerHTML = '';
-    ra.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">טרם התקבלו דיווחים השבוע<br>הסגניות ישלחו ספירות מלאי בקרוב</div></div>`;
-    return;
-  }
-  const totalCrit = reports.reduce((a, r) => a + (r.critical_count || 0), 0);
-  aa.innerHTML = totalCrit > 0
-    ? `<div class="alert">⚠️ <span>יש <strong>${totalCrit} פריטים קריטיים</strong> שדורשים טיפול דחוף</span></div>` : '';
-  let html = `<div class="section-label">דיווחים שהתקבלו (${reports.length})</div>`;
-  reports.forEach(r => {
-    const crit = r.critical_count || 0;
-    const low  = r.low_count || 0;
-    html += `<div class="card report-card" onclick="viewReport(${r.id})">
-      <div class="report-icon">${ICONS[r.department]||'📦'}</div>
-      <div class="report-info">
-        <div class="report-title">${DEPTS[r.department]||r.department}</div>
-        <div class="report-meta">${fmtTime(r.created_at)} · ${r.total_items||0} פריטים</div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-        ${crit>0 ? `<span class="badge badge-red">${crit} חסרים</span>` : ''}
-        ${low>0  ? `<span class="badge badge-orange">${low} נמוך</span>` : ''}
-        ${crit===0&&low===0 ? `<span class="badge badge-green">תקין</span>` : ''}
-        <span style="color:var(--muted);font-size:18px">›</span>
+document.getElementById('btn-confirm-del').onclick = async function() {
+  await db.from('products').update({is_active:false}).eq('id',delId);
+  closeM('m-delete'); toast('הוסר'); await loadProducts(); renderProducts();
+};
+
+document.getElementById('btn-submit').onclick = async function() {
+  const dp = products.filter(p=>p.department===currentDept);
+  let ok=0,low=0,crit=0,unk=0;
+  const items = dp.map(p=>{
+    const v=depValues[p.id]; const qty=v!==undefined&&v!==''?parseInt(v):null;
+    const st=getStatus(v,p.min_stock);
+    if(st==='ok')ok++;else if(st==='low')low++;else if(st==='crit')crit++;else unk++;
+    return{product_id:p.id,product_name:p.name,actual_qty:qty,min_stock:p.min_stock,unit:p.unit,status:st==='unk'?'unknown':st};
+  });
+  const {data:rep} = await db.from('inventory_reports').insert({
+    department:currentDept,submitted_by:DEPTS[currentDept],
+    total_items:dp.length,ok_count:ok,low_count:low,critical_count:crit,unknown_count:unk
+  }).select().single();
+  if(rep) await db.from('report_items').insert(items.map(i=>({...i,report_id:rep.id})));
+  let html=`<div style="font-size:13px;font-weight:700;margin-bottom:10px">סיכום — ${DEPTS[currentDept]}</div>`;
+  if(ok) html+=`<div class="rrow"><span>תקין</span><span class="rv-ok">${ok} פריטים</span></div>`;
+  if(low) html+=`<div class="rrow"><span>נמוך</span><span class="rv-low">${low} פריטים</span></div>`;
+  if(crit) html+=`<div class="rrow"><span>חסר</span><span class="rv-crit">${crit} פריטים</span></div>`;
+  document.getElementById('success-summary').innerHTML=html;
+  show('s-success');
+};
+
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
+
+function renderReports() {
+  const el=document.getElementById('tab-reports');
+  if(!reports.length){el.innerHTML='<div class="empty">טרם התקבלו דיווחים השבוע</div>';return;}
+  const crit=reports.reduce((a,r)=>a+(r.critical_count||0),0);
+  let html=crit>0?`<div class="alert">⚠️ ${crit} פריטים קריטיים דורשים טיפול</div>`:'';
+  html+=`<div class="section-label">דיווחים (${reports.length})</div>`;
+  reports.forEach(r=>{
+    const c=r.critical_count||0, l=r.low_count||0;
+    html+=`<div class="card" style="cursor:pointer" onclick="viewReport(${r.id})">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:20px">${ICONS[r.department]||'📦'}</div>
+        <div style="flex:1"><div style="font-weight:600;font-size:13px">${DEPTS[r.department]||r.department}</div>
+        <div style="font-size:11px;color:#6b7c93">${new Date(r.created_at).toLocaleString('he-IL',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'})}</div></div>
+        ${c>0?`<span class="badge badge-red">${c} חסרים</span>`:l>0?`<span class="badge" style="background:#fef5e7;color:#d68910">${l} נמוך</span>`:'<span class="badge badge-green">תקין</span>'}
       </div>
     </div>`;
   });
-  ra.innerHTML = html;
+  el.innerHTML=html;
 }
 
 function viewReport(id) {
-  const r = reports.find(x => x.id == id); if (!r) return;
-  document.getElementById('m-report-title').textContent = `דיווח — ${DEPTS[r.department]||r.department}`;
-  const items = r.report_items || [];
-  let html = items.length ? '' : '<p style="color:var(--muted);font-size:13px">אין פרטי פריטים</p>';
-  items.forEach(it => {
-    const st = it.status || 'unk';
-    const cls = st==='ok'?'rv-ok':st==='low'?'rv-low':st==='critical'?'rv-crit':'';
-    const lbl = st==='ok'?'תקין':st==='low'?'נמוך':st==='critical'?'חסר':'לא דווח';
-    html += `<div class="rdetail-row">
-      <span style="font-size:12px">${it.product_name}</span>
-      <span class="${cls}">${it.actual_qty!==null&&it.actual_qty!==undefined?it.actual_qty+' '+(it.unit||''):'—'}
-        <span style="font-weight:400;font-size:11px;color:var(--muted)">(${lbl})</span></span>
-    </div>`;
-  });
-  document.getElementById('m-report-content').innerHTML = html;
-  document.getElementById('m-report').classList.add('open');
-}
-
-// ══ ADMIN: PRODUCTS TAB ══════════════════════════════════════
-function adminTab(tab, el) {
-  document.querySelectorAll('#s-admin .tab').forEach(t => t.classList.remove('on'));
-  el.classList.add('on');
-  document.getElementById('at-reports').style.display  = tab==='reports' ? 'block' : 'none';
-  document.getElementById('at-products').style.display = tab==='products' ? 'flex' : 'none';
-  document.getElementById('at-stats').style.display    = tab==='stats' ? 'block' : 'none';
-  if (tab==='products') renderProducts();
-  if (tab==='stats') renderStats();
-}
-
-function fDept(d, el) {
-  curDeptFilter = d;
-  document.querySelectorAll('#at-products .pill').forEach(p => p.classList.remove('on'));
-  el.classList.add('on');
-  renderProducts();
+  const r=reports.find(x=>x.id==id); if(!r)return;
+  document.getElementById('m-report-title').textContent='דיווח — '+DEPTS[r.department];
+  const items=r.report_items||[];
+  let html=items.map(it=>{
+    const cls=it.status==='ok'?'rv-ok':it.status==='low'?'rv-low':it.status==='critical'?'rv-crit':'';
+    const lbl=it.status==='ok'?'תקין':it.status==='low'?'נמוך':it.status==='critical'?'חסר':'לא דווח';
+    return `<div class="rrow"><span style="font-size:12px">${it.product_name}</span><span class="${cls}">${it.actual_qty!==null?it.actual_qty+' '+(it.unit||''):'—'} (${lbl})</span></div>`;
+  }).join('');
+  document.getElementById('m-report-content').innerHTML=html||'<p style="color:#6b7c93">אין פרטים</p>';
+  openM('m-report');
 }
 
 function renderProducts() {
-  const q = (document.getElementById('p-search').value||'').toLowerCase();
-  let list = products.filter(p =>
-    (curDeptFilter==='all' || p.department===curDeptFilter) &&
-    (!q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q))
-  );
-  const el = document.getElementById('p-list');
-  if (!list.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">📦</div><div class="empty-text">לא נמצאו מוצרים</div></div>`;
-    return;
-  }
-  const byDept = {};
-  list.forEach(p => { if (!byDept[p.department]) byDept[p.department]=[]; byDept[p.department].push(p); });
-  let html = '';
-  Object.entries(byDept).forEach(([dept, items]) => {
-    if (curDeptFilter==='all') html += `<div class="section-label">${DEPTS[dept]||dept} (${items.length})</div>`;
-    items.forEach(p => {
-      html += `<div class="pcard">
-        <div class="pcard-top">
-          <div class="pcard-name">${p.name}</div>
-          <div class="pcard-btns">
-            <button class="icon-btn" onclick="openMove(${p.id})" title="העבר מחלקה">↔</button>
-            <button class="icon-btn" onclick="openEdit(${p.id})" title="עריכה">✎</button>
-            <button class="icon-btn danger" onclick="openDel(${p.id})" title="הסר">✕</button>
-          </div>
-        </div>
-        <div class="ptags">
-          <span class="ptag ptag-dept">${DEPTS[p.department]||p.department}</span>
-          <span class="ptag">${p.category}</span>
-          <span class="ptag">מינ׳ ${p.min_stock} ${p.unit}</span>
-        </div>
+  const q=(document.getElementById('p-search').value||'').toLowerCase();
+  let list=products.filter(p=>!q||p.name.toLowerCase().includes(q)||p.category.toLowerCase().includes(q));
+  const el=document.getElementById('p-list');
+  if(!list.length){el.innerHTML='<div class="empty">לא נמצאו מוצרים</div>';return;}
+  const byDept={};
+  list.forEach(p=>{if(!byDept[p.department])byDept[p.department]=[];byDept[p.department].push(p);});
+  let html='';
+  Object.entries(byDept).forEach(([dept,items])=>{
+    html+=`<div class="section-label">${DEPTS[dept]||dept} (${items.length})</div>`;
+    items.forEach(p=>{
+      html+=`<div class="pcard">
+        <div class="pcard-top"><div class="pcard-name">${p.name}</div>
+        <div class="pcard-btns">
+          <button class="ibtn" onclick="openMove(${p.id})">↔</button>
+          <button class="ibtn" onclick="openEdit(${p.id})">✎</button>
+          <button class="ibtn del" onclick="openDel(${p.id})">✕</button>
+        </div></div>
+        <div class="ptags"><span class="ptag ptag-dept">${DEPTS[p.department]||p.department}</span><span class="ptag">${p.category}</span><span class="ptag">מינ׳ ${p.min_stock} ${p.unit}</span></div>
       </div>`;
     });
   });
-  el.innerHTML = html;
+  el.innerHTML=html;
 }
 
-function openAdd() {
-  editId = null;
-  document.getElementById('m-product-title').textContent = 'הוספת מוצר';
-  ['f-name','f-cat','f-min','f-unit'].forEach(i => document.getElementById(i).value='');
-  document.getElementById('f-dept').value = curDeptFilter!=='all' ? curDeptFilter : 'reception';
-  document.getElementById('m-product').classList.add('open');
-}
 function openEdit(id) {
-  const p = products.find(x => x.id==id); if (!p) return;
-  editId = id;
-  document.getElementById('m-product-title').textContent = 'עריכת מוצר';
-  document.getElementById('f-name').value = p.name;
-  document.getElementById('f-cat').value  = p.category;
-  document.getElementById('f-min').value  = p.min_stock;
-  document.getElementById('f-unit').value = p.unit;
-  document.getElementById('f-dept').value = p.department;
-  document.getElementById('m-product').classList.add('open');
+  const p=products.find(x=>x.id==id); if(!p)return;
+  editId=id;
+  document.getElementById('m-product-title').textContent='עריכת מוצר';
+  document.getElementById('f-name').value=p.name;
+  document.getElementById('f-cat').value=p.category;
+  document.getElementById('f-min').value=p.min_stock;
+  document.getElementById('f-unit').value=p.unit;
+  document.getElementById('f-dept').value=p.department;
+  openM('m-product');
 }
-async function saveProduct() {
-  const name = document.getElementById('f-name').value.trim();
-  const cat  = document.getElementById('f-cat').value.trim();
-  const dept = document.getElementById('f-dept').value;
-  const min  = parseInt(document.getElementById('f-min').value)||1;
-  const unit = document.getElementById('f-unit').value.trim()||"יח'";
-  if (!name) { document.getElementById('f-name').focus(); return; }
-  const dup = products.find(p => p.name.toLowerCase()===name.toLowerCase() && p.id!=editId);
-  if (dup) { toast('מוצר זה כבר קיים ב'+DEPTS[dup.department]); return; }
-  const btn = document.getElementById('save-btn');
-  btn.textContent='שומר...'; btn.disabled=true;
-  try {
-    if (editId) {
-      const p = products.find(x=>x.id==editId);
-      const updated = {...p, name, category:cat, department:dept, min_stock:min, unit};
-      await dbUpdateProduct(updated);
-      const i = products.findIndex(x=>x.id==editId);
-      if (i>=0) products[i] = updated;
-      toast('המוצר עודכן');
-    } else {
-      const np = {name, category:cat, department:dept, min_stock:min, unit};
-      const saved = await dbAddProduct(np);
-      if (!products.find(x=>x.id==saved.id)) products.push(saved);
-      toast('המוצר נוסף');
-    }
-    closeM('m-product'); renderProducts(); renderStats();
-  } catch(e) { toast('שגיאה בשמירה'); }
-  btn.textContent='שמור מוצר'; btn.disabled=false;
-}
-
 function openMove(id) {
-  moveId = id;
-  const p = products.find(x=>x.id==id);
-  document.getElementById('m-move-name').textContent = p.name;
-  let html = '';
-  Object.entries(DEPTS).forEach(([k,n]) => {
-    const cur = k===p.department;
-    html += `<button class="move-btn ${cur?'cur':''}" onclick="${cur?'':``doMove('${k}')``}">${n}${cur?' ← נוכחית':''}</button>`;
+  moveId=id; const p=products.find(x=>x.id==id);
+  document.getElementById('m-move-name').textContent=p.name;
+  let html='';
+  Object.entries(DEPTS).forEach(([k,n])=>{
+    const cur=k===p.department;
+    html+=`<button class="move-btn ${cur?'cur':''}" ${cur?'':'onclick="doMove(\''+k+'\')"'}>${n}${cur?' ← נוכחית':''}</button>`;
   });
-  document.getElementById('m-move-list').innerHTML = html;
-  document.getElementById('m-move').classList.add('open');
+  document.getElementById('m-move-list').innerHTML=html;
+  openM('m-move');
 }
-async function doMove(newDept) {
-  const p = products.find(x=>x.id==moveId);
-  if (!p) return;
-  const updated = {...p, department:newDept};
-  try { await dbUpdateProduct(updated); const i=products.findIndex(x=>x.id==moveId); if(i>=0) products[i]=updated; }
-  catch(e) { toast('שגיאה'); return; }
-  closeM('m-move'); renderProducts(); toast('הועבר ל'+DEPTS[newDept]);
+async function doMove(dept) {
+  await db.from('products').update({department:dept}).eq('id',moveId);
+  closeM('m-move'); toast('הועבר ל'+DEPTS[dept]); await loadProducts(); renderProducts();
 }
-
 function openDel(id) {
-  delId = id;
-  const p = products.find(x=>x.id==id);
-  document.getElementById('m-del-name').textContent = p?p.name:'';
-  document.getElementById('m-delete').classList.add('open');
-}
-async function confirmDel() {
-  try { await dbDeleteProduct(delId); closeM('m-delete'); renderProducts(); renderStats(); toast('הוסר'); }
-  catch(e) { toast('שגיאה'); }
-}
-
-// ══ ADMIN: STATS TAB ══════════════════════════════════════════
-function renderStats() {
-  document.getElementById('st-total').textContent = products.length;
-  document.getElementById('st-reports-count').textContent = reports.length;
-  const totalCrit = reports.reduce((a,r)=>a+(r.critical_count||0),0);
-  document.getElementById('st-critical').textContent = totalCrit;
-  let html = '';
-  Object.entries(DEPTS).forEach(([k,n]) => {
-    const cnt = products.filter(p=>p.department===k).length;
-    const pct = products.length ? Math.round(cnt/products.length*100) : 0;
-    html += `<div class="progress-row">
-      <div class="progress-top"><span>${n}</span><span style="color:var(--muted)">${cnt} מוצרים</span></div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-    </div>`;
-  });
-  document.getElementById('st-breakdown').innerHTML = html;
-}
-
-// ══ DEPUTY ════════════════════════════════════════════════════
-function depF(f, el) {
-  depFilter_ = f;
-  document.querySelectorAll('#s-deputy .pill').forEach(p => p.classList.remove('on'));
-  el.classList.add('on');
-  renderDepItems();
+  delId=id; const p=products.find(x=>x.id==id);
+  document.getElementById('m-del-name').textContent=p?p.name:'';
+  openM('m-delete');
 }
 
 function renderDepItems() {
-  const deptProducts = products.filter(p => p.department===currentDept);
-  const el = document.getElementById('dep-items');
-  const filtered = deptProducts.filter(p => {
-    const st = getStatus(depValues[p.id], p.min_stock);
-    return depFilter_==='all' || depFilter_===st || (depFilter_==='crit'&&st==='crit');
-  });
-  if (!filtered.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">📦</div><div class="empty-text">אין פריטים בסינון זה</div></div>`;
-    return;
-  }
-  let html = `<div class="card" style="background:#e8f0f7;border-color:#c5d8ea;margin-bottom:12px">
-    <div style="font-size:13px;font-weight:600;color:var(--brand);margin-bottom:3px">ספירת מלאי שבועית — ${DEPTS[currentDept]}</div>
-    <div style="font-size:12px;color:var(--brand-lt)">הכניסי כמה יש מכל מוצר. 🔴 חסר · 🟡 נמוך · 🟢 תקין</div>
+  const dp=products.filter(p=>p.department===currentDept);
+  let html=`<div class="card" style="background:#e8f0f7;border-color:#c5d8ea;margin-bottom:12px">
+    <div style="font-size:13px;font-weight:600;color:#1a3a52;margin-bottom:3px">ספירת מלאי — ${DEPTS[currentDept]}</div>
+    <div style="font-size:12px;color:#2471a3">הכניסי כמה יש מכל מוצר</div>
   </div>`;
-  filtered.forEach(p => {
-    const val = depValues[p.id]!==undefined ? depValues[p.id] : '';
-    const st  = getStatus(val, p.min_stock);
-    const dotCls = {ok:'dot-ok',low:'dot-low',crit:'dot-crit',unk:'dot-unk'}[st];
-    html += `<div class="irow" id="ir-${p.id}">
-      <div class="irow-top">
-        <div class="status-dot ${dotCls}"></div>
-        <div class="irow-name">${p.name}</div>
-      </div>
-      <div class="irow-tags">
-        <span class="ptag">${p.category}</span>
-        <span class="ptag">מינ׳ ${p.min_stock} ${p.unit}</span>
-      </div>
-      <div class="irow-input-row">
+  dp.forEach(p=>{
+    const v=depValues[p.id]!==undefined?depValues[p.id]:'';
+    const st=getStatus(v,p.min_stock);
+    const dc={ok:'dot-ok',low:'dot-low',crit:'dot-crit',unk:'dot-unk'}[st];
+    html+=`<div class="irow" id="ir-${p.id}">
+      <div class="irow-top"><div class="dot ${dc}" id="dot-${p.id}"></div><div class="irow-name">${p.name}</div></div>
+      <div class="irow-tags"><span class="ptag">${p.category}</span><span class="ptag">מינ׳ ${p.min_stock} ${p.unit}</span></div>
+      <div class="irow-footer">
         <div class="irow-label">כמה יש כרגע?</div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <input type="number" class="qty-input" min="0" value="${val}" placeholder="0"
-            oninput="updateDep(${p.id},${p.min_stock},this.value)">
-          <span class="qty-unit">${p.unit}</span>
-        </div>
+        <input type="number" class="qty" min="0" value="${v}" placeholder="0" onchange="updDep(${p.id},${p.min_stock},this.value)">
+        <span class="qty-unit">${p.unit}</span>
       </div>
     </div>`;
   });
-  el.innerHTML = html;
+  document.getElementById('dep-items').innerHTML=html;
 }
-
-function updateDep(id, min, val) {
-  depValues[id] = val;
-  const st = getStatus(val, min);
-  const row = document.getElementById('ir-'+id); if (!row) return;
-  const dot = row.querySelector('.status-dot');
-  dot.className = 'status-dot ' + {ok:'dot-ok',low:'dot-low',crit:'dot-crit',unk:'dot-unk'}[st];
+function updDep(id,min,v) {
+  depValues[id]=v;
+  const st=getStatus(v,min);
+  const dot=document.getElementById('dot-'+id);
+  if(dot) dot.className='dot '+{ok:'dot-ok',low:'dot-low',crit:'dot-crit',unk:'dot-unk'}[st];
 }
-
-async function submitReport() {
-  const deptProducts = products.filter(p => p.department===currentDept);
-  let ok=0, low=0, crit=0, unk=0;
-  const items = deptProducts.map(p => {
-    const val = depValues[p.id];
-    const qty = val!==undefined && val!=='' ? parseInt(val) : null;
-    const st  = getStatus(val, p.min_stock);
-    if(st==='ok') ok++; else if(st==='low') low++; else if(st==='crit') crit++; else unk++;
-    return { product_id:p.id, product_name:p.name, actual_qty:qty, min_stock:p.min_stock, unit:p.unit, status:st==='unk'?'unknown':st };
-  });
-  const reportData = {
-    department: currentDept, submitted_by: DEPTS[currentDept],
-    total_items: deptProducts.length, ok_count:ok, low_count:low, critical_count:crit, unknown_count:unk
-  };
-  const btn = document.getElementById('submit-btn');
-  btn.textContent='שולח...'; btn.disabled=true;
-  try {
-    await dbSubmitReport(reportData, items);
-    let sumHtml = `<div style="font-size:13px;font-weight:700;margin-bottom:10px">סיכום — ${DEPTS[currentDept]}</div>`;
-    if(ok)  sumHtml+=`<div class="rdetail-row"><span>תקין</span><span class="rv-ok">${ok} פריטים</span></div>`;
-    if(low) sumHtml+=`<div class="rdetail-row"><span>נמוך</span><span class="rv-low">${low} פריטים</span></div>`;
-    if(crit)sumHtml+=`<div class="rdetail-row"><span>חסר/קריטי</span><span class="rv-crit">${crit} פריטים</span></div>`;
-    if(unk) sumHtml+=`<div class="rdetail-row"><span style="color:var(--muted)">לא דווח</span><span style="color:var(--muted)">${unk} פריטים</span></div>`;
-    document.getElementById('success-summary').innerHTML = sumHtml;
-    show('s-success');
-  } catch(e) { toast('שגיאה בשליחה, נסי שוב'); }
-  btn.textContent='שלח דיווח מלאי'; btn.disabled=false;
-}
-
-// ══ REALTIME (Supabase live updates) ══════════════════════════
-function setupRealtime() {
-  if (DEMO_MODE || !db) return;
-  db.channel('inventory')
-    .on('postgres_changes', {event:'INSERT', schema:'public', table:'inventory_reports'}, async () => {
-      await loadReports();
-      renderAdminReports();
-      renderStats();
-    })
-    .subscribe();
-}
-
-// ══ LOGO (יוחלף בלוגו אמיתי) ════════════════════════════════
-function setLogo(url) {
-  if (!url) return;
-  ['hero-logo','topbar-logo-img','dep-topbar-logo'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.innerHTML = `<img src="${url}" alt="לוגו" style="width:100%;height:100%;object-fit:contain;border-radius:inherit">`;
-  });
-}
-// קרי setLogo('URL_של_הלוגו_שלך') לאחר קבלת הלוגו
-
-if (!DEMO_MODE) setupRealtime();
 </script>
 </body>
 </html>
