@@ -16,19 +16,21 @@ body{font-family:Arial,sans-serif;background:#f0f4f8;direction:rtl;font-size:14p
 .hero h1{font-size:22px;margin-bottom:6px}
 .hero p{font-size:13px;opacity:.8}
 .body{padding:1.5rem;flex:1}
-.btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px;font-family:Arial,sans-serif}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px;font-family:Arial,sans-serif;transition:all .15s}
 .btn-primary{background:#1a3a52;color:#fff}
+.btn-primary:active{background:#112940}
 .btn-outline{background:#fff;color:#1a3a52;border:1.5px solid #1a3a52}
 .btn-green{background:#1e8449;color:#fff}
-.btn-sm{padding:8px 14px;font-size:12px;width:auto;display:inline-block;margin:0}
+.btn-sm{padding:7px 13px;font-size:12px;width:auto;display:inline-block;margin:0;border-radius:8px}
+.btn-disabled{background:#ccc;color:#888;cursor:not-allowed}
 select,input[type=text],input[type=number],input[type=password]{width:100%;padding:10px;border:1.5px solid #cdd5df;border-radius:8px;font-size:14px;margin-bottom:12px;font-family:Arial,sans-serif}
 select:focus,input:focus{outline:none;border-color:#1a3a52}
 .topbar{background:#1a3a52;color:#fff;padding:.9rem 1.1rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .topbar h2{font-size:15px;font-weight:600}
 .topbar-sub{font-size:11px;opacity:.7}
-.topbar-btn{background:rgba(255,255,255,.2);border:none;color:#fff;padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px}
-.tabs{display:flex;border-bottom:1px solid #e0e6ed;flex-shrink:0}
-.tab{flex:1;padding:10px;text-align:center;font-size:12px;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:#6b7c93;font-family:Arial,sans-serif}
+.topbar-btn{background:rgba(255,255,255,.2);border:none;color:#fff;padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:Arial,sans-serif}
+.tabs{display:flex;border-bottom:1px solid #e0e6ed;flex-shrink:0;overflow-x:auto}
+.tab{flex:1;min-width:60px;padding:10px 6px;text-align:center;font-size:11px;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:#6b7c93;font-family:Arial,sans-serif;white-space:nowrap}
 .tab.on{color:#1a3a52;border-bottom-color:#1a3a52;font-weight:600}
 .scroll{flex:1;overflow-y:auto;padding:.9rem}
 .card{background:#fff;border:1px solid #e0e6ed;border-radius:10px;padding:.9rem;margin-bottom:9px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
@@ -42,20 +44,18 @@ select:focus,input:focus{outline:none;border-color:#1a3a52}
 .ptag{font-size:11px;padding:2px 7px;border-radius:20px;background:#f0f4f8;border:1px solid #e0e6ed;color:#6b7c93}
 .ptag-dept{background:#e8f0f7;color:#1a3a52}
 .irow{background:#fff;border:1px solid #e0e6ed;border-radius:10px;padding:.75rem .9rem;margin-bottom:8px}
-.irow-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px}
+.irow-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}
 .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:3px}
 .dot-ok{background:#1e8449}.dot-low{background:#d68910}.dot-crit{background:#c0392b}.dot-unk{background:#bdc3c7}
 .irow-name{font-size:13px;font-weight:600;flex:1}
-.irow-tags{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
-.irow-footer{display:flex;align-items:center;gap:8px}
+.irow-meta{font-size:11px;color:#6b7c93;margin-bottom:6px}
+.irow-footer{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .irow-label{font-size:12px;color:#6b7c93;flex:1}
 .qty{width:74px;text-align:center;padding:7px;border-radius:8px;border:1px solid #cdd5df;font-size:16px;font-weight:600;font-family:Arial,sans-serif;margin-bottom:0}
 .qty:focus{outline:none;border-color:#1a3a52}
 .qty-unit{font-size:11px;color:#6b7c93}
-.order-badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;margin-right:4px}
-.ob-ok{background:#e8f8f0;color:#1e8449}
-.ob-low{background:#fef5e7;color:#d68910}
-.ob-crit{background:#fde8e8;color:#c0392b}
+.note-input{width:100%;padding:7px 10px;border:1px solid #e0e6ed;border-radius:8px;font-size:12px;font-family:Arial,sans-serif;color:#333;resize:none;margin-top:2px}
+.note-input:focus{outline:none;border-color:#1a3a52}
 .fab{padding:.85rem;border-top:1px solid #e0e6ed;flex-shrink:0}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:100}
 .modal-bg.open{display:flex}
@@ -69,30 +69,56 @@ select:focus,input:focus{outline:none;border-color:#1a3a52}
 .modal-actions{display:flex;gap:8px;margin-top:4px}
 .modal-actions .btn{margin:0}
 .success-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center}
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a3a52;color:#fff;padding:9px 20px;border-radius:20px;font-size:13px;z-index:200;display:none;white-space:nowrap}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a3a52;color:#fff;padding:9px 20px;border-radius:20px;font-size:13px;z-index:200;display:none;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)}
 .toast.show{display:block;animation:ft 2.5s ease forwards}
 @keyframes ft{0%{opacity:0}12%{opacity:1}80%{opacity:1}100%{opacity:0}}
-.empty{text-align:center;padding:2.5rem 1rem;color:#6b7c93}
-.section-label{font-size:11px;font-weight:600;color:#6b7c93;text-transform:uppercase;letter-spacing:.05em;margin:10px 0 6px}
-.rrow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #e0e6ed;font-size:13px}
-.rrow:last-child{border:none}
-.rv-ok{color:#1e8449;font-weight:600}.rv-low{color:#d68910;font-weight:600}.rv-crit{color:#c0392b;font-weight:600}
-.alert{background:#fef5e7;border:1px solid #f0c040;border-radius:10px;padding:.75rem 1rem;margin-bottom:10px;font-size:12px;color:#7d6608}
-.move-btn{width:100%;padding:10px 14px;border:1px solid #e0e6ed;border-radius:8px;background:#f0f4f8;font-size:13px;cursor:pointer;text-align:right;margin-bottom:6px;font-family:Arial,sans-serif}
-.move-btn:hover{background:#e8f0f7;border-color:#1a3a52}
-.move-btn.cur{opacity:.4;cursor:default;pointer-events:none}
-.report-card{cursor:pointer;transition:all .12s}
-.report-card:hover{border-color:#1a3a52}
+.empty{text-align:center;padding:2.5rem 1rem;color:#6b7c93;font-size:13px}
+.section-label{font-size:11px;font-weight:600;color:#6b7c93;text-transform:uppercase;letter-spacing:.05em;margin:10px 0 6px;padding:0 .1rem}
 .badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
 .badge-red{background:#fde8e8;color:#c0392b}
 .badge-green{background:#e8f8f0;color:#1e8449}
 .badge-orange{background:#fef5e7;color:#d68910}
-.order-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
-.order-table th{background:#1a3a52;color:#fff;padding:6px 8px;text-align:right}
-.order-table td{padding:6px 8px;border-bottom:1px solid #e0e6ed}
-.order-table tr:last-child td{border:none}
-.order-table tr.need-order{background:#fff8f0}
-.order-table tr.critical{background:#fff0f0}
+.badge-gray{background:#f0f4f8;color:#6b7c93;border:1px solid #e0e6ed}
+.alert-banner{background:#fef5e7;border:1px solid #f0c040;border-radius:10px;padding:.75rem 1rem;margin-bottom:10px;font-size:12px;color:#7d6608}
+.missing-banner{background:#fde8e8;border:1px solid #e74c3c;border-radius:10px;padding:.75rem 1rem;margin-bottom:10px;font-size:12px;color:#922b21;font-weight:600}
+.deadline-bar{background:#1a3a52;color:#fff;padding:.5rem .9rem;font-size:12px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.deadline-ok{color:#a9dfbf}
+.deadline-warn{color:#f9e79f}
+.deadline-late{color:#f1948a}
+.report-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.report-table th{background:#1a3a52;color:#fff;padding:7px 8px;text-align:right;font-size:11px}
+.report-table td{padding:6px 8px;border-bottom:1px solid #e0e6ed;vertical-align:middle}
+.report-table tr:last-child td{border:none}
+.row-crit{background:#fff0f0}
+.row-surplus{background:#f0fff4}
+.row-unk{background:#f8f8f8;color:#999}
+.diff-neg{color:#c0392b;font-weight:700}
+.diff-pos{color:#1e8449;font-weight:700}
+.diff-zero{color:#6b7c93}
+.move-btn{width:100%;padding:10px 14px;border:1px solid #e0e6ed;border-radius:8px;background:#f0f4f8;font-size:13px;cursor:pointer;text-align:right;margin-bottom:6px;font-family:Arial,sans-serif}
+.move-btn:hover{background:#e8f0f7;border-color:#1a3a52}
+.move-btn.cur{opacity:.4;cursor:default;pointer-events:none}
+.inquiry-card{border:1px solid #e0e6ed;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.inquiry-header{background:#1a3a52;color:#fff;padding:.7rem 1rem;font-weight:600;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.inquiry-body{padding:.75rem 1rem}
+.inquiry-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0f4f8;font-size:12px}
+.inquiry-row:last-child{border:none}
+.inquiry-label{color:#6b7c93}
+.status-pill{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+.status-approved{background:#e8f8f0;color:#1e8449}
+.status-pending{background:#fef5e7;color:#d68910}
+.status-rejected{background:#fde8e8;color:#c0392b}
+.price-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+.price-table th{background:#f0f4f8;padding:6px 8px;text-align:right;color:#6b7c93;font-size:11px;border-bottom:1px solid #e0e6ed}
+.price-table td{padding:6px 8px;border-bottom:1px solid #f0f4f8;vertical-align:middle}
+.price-table tr:last-child td{border:none}
+.price-best{background:#e8f8f0;color:#1e8449;font-weight:700}
+.price-sale{font-size:10px;color:#e67e22;font-weight:600;margin-right:4px}
+.compare-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}
+.compare-table th{background:#1a3a52;color:#fff;padding:6px;text-align:right;font-size:10px}
+.compare-table td{padding:5px 6px;border-bottom:1px solid #e0e6ed;font-size:11px}
+.compare-table tr:last-child td{border:none}
+.best-price{background:#e8f8f0;font-weight:700;color:#1e8449}
 </style>
 </head>
 <body>
@@ -107,7 +133,7 @@ select:focus,input:focus{outline:none;border-color:#1a3a52}
   </div>
   <div class="body">
     <label class="f-label">כניסת אחראית מלאים</label>
-    <input type="password" id="admin-pass" placeholder="סיסמה" onkeydown="if(event.key==='Enter')adminLogin()">
+    <input type="password" id="admin-pass" placeholder="סיסמה">
     <button class="btn btn-primary" id="btn-admin">כניסת אחראית מלאים</button>
     <div style="text-align:center;color:#6b7c93;margin:10px 0;font-size:13px">או</div>
     <label class="f-label">כניסת סגנית — בחרי מחלקה</label>
@@ -118,7 +144,7 @@ select:focus,input:focus{outline:none;border-color:#1a3a52}
       <option value="community">רפואת קהילה וחדרים</option>
     </select>
     <button class="btn btn-outline" id="btn-deputy">כניסה לספירת מלאי</button>
-    <p style="font-size:11px;color:#6b7c93;text-align:center;margin-top:1rem">גרסה 2.0 · חוות דעת רחובות</p>
+    <p style="font-size:11px;color:#6b7c93;text-align:center;margin-top:1rem">גרסה 3.0 · חוות דעת רחובות</p>
   </div>
 </div>
 
@@ -129,16 +155,22 @@ select:focus,input:focus{outline:none;border-color:#1a3a52}
     <button class="topbar-btn" id="btn-logout-admin">יציאה</button>
   </div>
   <div class="tabs">
-    <button class="tab on" id="tab-reports-btn">דיווחים</button>
-    <button class="tab" id="tab-products-btn">מוצרים</button>
+    <button class="tab on" id="tab-rep-btn">דיווחים</button>
+    <button class="tab" id="tab-prod-btn">מוצרים</button>
+    <button class="tab" id="tab-inq-btn">בירורים</button>
+    <button class="tab" id="tab-price-btn">מחירים</button>
   </div>
-  <div id="tab-reports" class="scroll"><div class="empty">טוען...</div></div>
-  <div id="tab-products" style="display:none;flex:1;flex-direction:column;overflow:hidden">
+
+  <!-- REPORTS -->
+  <div id="tab-rep" class="scroll"><div class="empty">טוען...</div></div>
+
+  <!-- PRODUCTS -->
+  <div id="tab-prod" style="display:none;flex:1;flex-direction:column;overflow:hidden">
     <div style="padding:.75rem .9rem .25rem;display:flex;gap:8px">
       <input class="f-input" id="p-search" type="text" placeholder="חיפוש..." style="margin:0;flex:1">
     </div>
     <div style="padding:0 .9rem .5rem;display:flex;gap:6px;overflow-x:auto">
-      <button class="btn btn-sm btn-primary" onclick="filterDept('all',this)" id="pill-all">הכול</button>
+      <button class="btn btn-sm btn-primary" onclick="filterDept('all',this)">הכול</button>
       <button class="btn btn-sm btn-outline" onclick="filterDept('reception',this)">קבלה</button>
       <button class="btn btn-sm btn-outline" onclick="filterDept('surgery',this)">ניתוח</button>
       <button class="btn btn-sm btn-outline" onclick="filterDept('hospitalization',this)">אשפוז</button>
@@ -146,6 +178,29 @@ select:focus,input:focus{outline:none;border-color:#1a3a52}
     </div>
     <div class="scroll" id="p-list"></div>
     <div class="fab"><button class="btn btn-primary" id="btn-add" style="margin:0">+ הוסף מוצר</button></div>
+  </div>
+
+  <!-- INQUIRIES -->
+  <div id="tab-inq" class="scroll" style="display:none">
+    <button class="btn btn-primary" id="btn-add-inq" style="margin-bottom:12px">+ הוסף מוצר לבירור</button>
+    <div id="inq-list"><div class="empty">אין מוצרים בבירור</div></div>
+  </div>
+
+  <!-- PRICES -->
+  <div id="tab-price" style="display:none;flex:1;flex-direction:column;overflow:hidden">
+    <div style="padding:.9rem;border-bottom:1px solid #e0e6ed;flex-shrink:0">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">העלאת מחירון ספק</div>
+      <select id="price-supplier" style="margin-bottom:8px">
+        <option value="vetmarket">וטמרקט</option>
+        <option value="medimarket">מדימרקט</option>
+        <option value="linvitz">לינביץ</option>
+        <option value="biomed">ביומד</option>
+        <option value="other">אחר</option>
+      </select>
+      <input type="file" id="price-file" accept=".xlsx,.xls,.csv" style="margin-bottom:8px;padding:6px;font-size:12px">
+      <button class="btn btn-primary btn-sm" onclick="uploadPriceFile()" style="width:100%;padding:10px">העלה מחירון</button>
+    </div>
+    <div class="scroll" id="price-compare"><div class="empty">טען מחירון כדי לראות השוואה</div></div>
   </div>
 </div>
 
@@ -155,11 +210,14 @@ select:focus,input:focus{outline:none;border-color:#1a3a52}
     <div><div class="topbar-sub">ספירת מלאי שבועית</div><h2 id="dep-title">קבלה</h2></div>
     <button class="topbar-btn" id="btn-logout-deputy">יציאה</button>
   </div>
-  <div style="padding:.6rem .9rem;background:#e8f0f7;border-bottom:1px solid #c5d8ea;font-size:12px;color:#1a3a52">
-    💡 הכניסי כמה יש בפועל — המערכת תחשב כמה להזמין
+  <div class="deadline-bar">
+    <span>מועד הגשה: ראשון בחצות</span>
+    <span id="deadline-countdown" class="deadline-ok">טוען...</span>
   </div>
   <div class="scroll" id="dep-items"></div>
-  <div class="fab"><button class="btn btn-primary" id="btn-submit" style="margin:0">שלח דיווח מלאי</button></div>
+  <div class="fab">
+    <button class="btn btn-primary" id="btn-submit" style="margin:0">שלח דיווח מלאי ←</button>
+  </div>
 </div>
 
 <!-- SUCCESS -->
@@ -168,9 +226,9 @@ select:focus,input:focus{outline:none;border-color:#1a3a52}
   <div class="success-body">
     <div style="font-size:52px;margin-bottom:1rem">✅</div>
     <div style="font-size:20px;font-weight:700;margin-bottom:8px">הדיווח נשלח בהצלחה!</div>
-    <div style="font-size:13px;color:#6b7c93;margin-bottom:1.5rem">קובץ Excel יוצר ונשלח לאחראית המלאים</div>
+    <div style="font-size:13px;color:#6b7c93;margin-bottom:1.5rem">האחראית תטפל בהזמנות בהתאם</div>
     <div class="card" id="success-summary" style="width:100%;text-align:right"></div>
-    <button class="btn btn-green" id="btn-download-excel" style="margin-top:1rem">⬇ הורד קובץ Excel של הדיווח</button>
+    <button class="btn btn-green" id="btn-dl-success" style="margin-top:1rem">⬇ הורד Excel של הדיווח</button>
     <button class="btn btn-outline" id="btn-back" style="margin-top:.5rem">חזרה לדף הבית</button>
   </div>
 </div>
@@ -183,9 +241,9 @@ select:focus,input:focus{outline:none;border-color:#1a3a52}
     <div class="modal-handle"></div>
     <div class="modal-title" id="m-product-title">הוספת מוצר</div>
     <label class="f-label">שם המוצר</label>
-    <input class="f-input" id="f-name" placeholder="Frontline Spot On Cat">
+    <input class="f-input" id="f-name" placeholder="Pantoprazole 40mg INJ">
     <label class="f-label">קטגוריה</label>
-    <input class="f-input" id="f-cat" placeholder="נגד פרעושים">
+    <input class="f-input" id="f-cat" placeholder="תרופות IV">
     <label class="f-label">מחלקה</label>
     <select class="f-input" id="f-dept" style="margin-bottom:10px">
       <option value="reception">קבלה</option>
@@ -237,6 +295,36 @@ select:focus,input:focus{outline:none;border-color:#1a3a52}
   </div>
 </div>
 
+<div class="modal-bg" id="m-inquiry">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="m-inq-title">מוצר לבירור</div>
+    <label class="f-label">שם המוצר</label>
+    <input class="f-input" id="inq-name" placeholder="Lactated Ringer 1L">
+    <label class="f-label">ספק נוכחי</label>
+    <input class="f-input" id="inq-supplier" placeholder="וטמרקט">
+    <label class="f-label">מחיר נוכחי</label>
+    <input class="f-input" id="inq-price" placeholder="₪9.40" type="text">
+    <label class="f-label">תוקף</label>
+    <input class="f-input" id="inq-expiry" placeholder="31/01/29" type="text">
+    <label class="f-label">הערות</label>
+    <input class="f-input" id="inq-notes" placeholder="לבדוק מחיר מול מדימרקט">
+    <label class="f-label">סטטוס</label>
+    <select class="f-input" id="inq-status" style="margin-bottom:10px">
+      <option value="pending">בבירור</option>
+      <option value="approved">אושר</option>
+      <option value="rejected">לא אושר</option>
+    </select>
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px;margin-top:4px">השוואת ספקים</div>
+    <div id="inq-suppliers-list"></div>
+    <button class="btn btn-outline btn-sm" onclick="addSupplierRow()" style="width:100%;margin-bottom:12px;padding:8px">+ הוסף ספק להשוואה</button>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="btn-cancel-inq">ביטול</button>
+      <button class="btn btn-primary" id="btn-save-inq">שמור</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -247,79 +335,136 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const DEPTS = {reception:'קבלה',surgery:'חדר ניתוח',hospitalization:'אשפוז ומעבדה',community:'רפואת קהילה וחדרים'};
 const ICONS = {reception:'💊',surgery:'🔬',hospitalization:'🧪',community:'🏠'};
+const SUPPLIERS = {vetmarket:'וטמרקט',medimarket:'מדימרקט',linvitz:'לינביץ',biomed:'ביומד',other:'אחר'};
 
-let products=[], reports=[], depValues={}, currentDept='', editId=null, delId=null, moveId=null;
-let currentDeptFilter='all', lastReportData=null, lastReportItems=null;
+let products=[], reports=[], inquiries=[], depValues={}, depNotes={};
+let currentDept='', editId=null, delId=null, moveId=null, editInqId=null;
+let currentDeptFilter='all', lastReportForDownload=null;
 
+// ── UTILS ──────────────────────────────────────────────────────
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(()=>t.className='toast',2600);}
 function openM(id){document.getElementById(id).classList.add('open');}
 function closeM(id){document.getElementById(id).classList.remove('open');}
 function getStatus(v,min){if(v===''||v===null||v===undefined)return'unk';const n=parseInt(v);if(isNaN(n))return'unk';if(n===0)return'crit';if(n<min*.5)return'crit';if(n<min*.8)return'low';return'ok';}
-function getOrderQty(actual,min){if(actual===''||actual===null||actual===undefined)return null;const n=parseInt(actual);if(isNaN(n))return null;const need=min-n;return need>0?need:0;}
+function getDiff(actual,min){if(actual===''||actual===null||actual===undefined)return null;const n=parseInt(actual);if(isNaN(n))return null;return n-min;}
 
-async function loadProducts(){const {data}=await db.from('products').select('*').eq('is_active',true).order('department').order('name');products=data||[];}
+// ── DEADLINE ──────────────────────────────────────────────────
+function getDeadlineInfo(){
+  const now=new Date();
+  const il=new Date(now.toLocaleString('en-US',{timeZone:'Asia/Jerusalem'}));
+  const day=il.getDay(); // 0=Sun
+  const daysToSun=day===0?7:7-day;
+  const nextSun=new Date(il);
+  nextSun.setDate(il.getDate()+daysToSun);
+  nextSun.setHours(24,0,0,0);
+  const diff=nextSun-il;
+  const hours=Math.floor(diff/3600000);
+  const mins=Math.floor((diff%3600000)/60000);
+  const days=Math.floor(hours/24);
+  const isPastDeadline=diff<0;
+  return{hours,mins,days,isPastDeadline,diff};
+}
+
+function updateDeadline(){
+  const el=document.getElementById('deadline-countdown');
+  if(!el)return;
+  const {days,hours,mins,isPastDeadline,diff}=getDeadlineInfo();
+  if(isPastDeadline){el.textContent='⛔ המועד עבר';el.className='deadline-late';}
+  else if(diff<3600000*6){el.textContent=`⚠️ ${hours}:${String(mins).padStart(2,'0')} שנותרו`;el.className='deadline-warn';}
+  else if(days>=1){el.textContent=`✓ ${days} ימים`;el.className='deadline-ok';}
+  else{el.textContent=`✓ ${hours} שעות`;el.className='deadline-ok';}
+}
+
+function isDeadlinePassed(){return getDeadlineInfo().isPastDeadline;}
+
+// ── DATA ───────────────────────────────────────────────────────
+async function loadProducts(){const {data}=await db.from('products').select('*').eq('is_active',true).order('department').order('category').order('name');products=data||[];}
 async function loadReports(){const since=new Date(Date.now()-30*24*60*60*1000).toISOString();const {data}=await db.from('inventory_reports').select('*,report_items(*)').gte('created_at',since).order('created_at',{ascending:false});reports=data||[];}
+function loadInquiries(){inquiries=JSON.parse(localStorage.getItem('inq_v1')||'[]');}
+function saveInquiries(){localStorage.setItem('inq_v1',JSON.stringify(inquiries));}
 
 // ── LOGIN ──────────────────────────────────────────────────────
-function adminLogin(){
+async function adminLogin(){
   const pass=document.getElementById('admin-pass').value;
   if(pass!==ADMIN_PASS){toast('סיסמה שגויה');return;}
-  enterAdmin();
-}
-async function enterAdmin(){
   show('s-admin');
-  await loadProducts(); await loadReports();
-  renderReports(); renderProducts();
+  await loadProducts();await loadReports();loadInquiries();
+  renderReports();renderProducts();renderInquiries();renderPriceCompare();
+  switchAdminTab('rep',document.getElementById('tab-rep-btn'));
 }
 
 document.getElementById('btn-admin').onclick=adminLogin;
+document.getElementById('admin-pass').onkeydown=e=>{if(e.key==='Enter')adminLogin();};
+
 document.getElementById('btn-deputy').onclick=async function(){
   currentDept=document.getElementById('dept-select').value;
-  depValues={};
+  depValues={};depNotes={};
   document.getElementById('dep-title').textContent=DEPTS[currentDept];
   show('s-deputy');
+  updateDeadline();
+  setInterval(updateDeadline,60000);
   await loadProducts();
   renderDepItems();
-};
-document.getElementById('btn-logout-admin').onclick=function(){show('s-login');document.getElementById('admin-pass').value='';};
-document.getElementById('btn-logout-deputy').onclick=function(){show('s-login');};
-document.getElementById('btn-back').onclick=function(){show('s-login');};
-document.getElementById('admin-pass').onkeydown=function(e){if(e.key==='Enter')adminLogin();};
-
-// ── TABS ───────────────────────────────────────────────────────
-document.getElementById('tab-reports-btn').onclick=function(){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));this.classList.add('on');
-  document.getElementById('tab-reports').style.display='block';
-  document.getElementById('tab-products').style.display='none';
-};
-document.getElementById('tab-products-btn').onclick=function(){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));this.classList.add('on');
-  document.getElementById('tab-reports').style.display='none';
-  document.getElementById('tab-products').style.display='flex';
+  updateSubmitBtn();
 };
 
-// ── ADMIN REPORTS ──────────────────────────────────────────────
+document.getElementById('btn-logout-admin').onclick=()=>{show('s-login');document.getElementById('admin-pass').value='';};
+document.getElementById('btn-logout-deputy').onclick=()=>show('s-login');
+document.getElementById('btn-back').onclick=()=>show('s-login');
+
+// ── ADMIN TABS ──────────────────────────────────────────────────
+function switchAdminTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  ['rep','prod','inq','price'].forEach(t=>{
+    const el2=document.getElementById('tab-'+t);
+    if(el2)el2.style.display=t===name?(t==='prod'||t==='price'?'flex':'block'):'none';
+  });
+}
+document.getElementById('tab-rep-btn').onclick=function(){switchAdminTab('rep',this);};
+document.getElementById('tab-prod-btn').onclick=function(){switchAdminTab('prod',this);};
+document.getElementById('tab-inq-btn').onclick=function(){switchAdminTab('inq',this);};
+document.getElementById('tab-price-btn').onclick=function(){switchAdminTab('price',this);};
+
+// ── ADMIN REPORTS ───────────────────────────────────────────────
 function renderReports(){
-  const el=document.getElementById('tab-reports');
-  if(!reports.length){el.innerHTML='<div class="empty">טרם התקבלו דיווחים</div>';return;}
-  const totalCrit=reports.reduce((a,r)=>a+(r.critical_count||0),0);
-  let html=totalCrit>0?`<div class="alert">⚠️ ${totalCrit} פריטים קריטיים דורשים הזמנה דחופה</div>`:'';
+  const el=document.getElementById('tab-rep');
+  // Check which depts haven't reported this week
+  const now=new Date();
+  const ilNow=new Date(now.toLocaleString('en-US',{timeZone:'Asia/Jerusalem'}));
+  const dayOfWeek=ilNow.getDay();
+  const daysSinceSun=dayOfWeek===0?0:dayOfWeek;
+  const weekStart=new Date(ilNow);
+  weekStart.setDate(ilNow.getDate()-daysSinceSun);
+  weekStart.setHours(0,0,0,0);
+  const reportedDepts=new Set(reports.filter(r=>new Date(r.created_at)>=weekStart).map(r=>r.department));
+  const missingDepts=Object.keys(DEPTS).filter(d=>!reportedDepts.has(d));
+
+  let html='';
+  if(missingDepts.length>0){
+    html+=`<div class="missing-banner">⚠️ טרם דיווחו השבוע: ${missingDepts.map(d=>DEPTS[d]).join(', ')}</div>`;
+  }
+  const totalCrit=reports.filter(r=>new Date(r.created_at)>=weekStart).reduce((a,r)=>a+(r.critical_count||0),0);
+  if(totalCrit>0){html+=`<div class="alert-banner">🛒 ${totalCrit} פריטים קריטיים דורשים הזמנה</div>`;}
+  if(!reports.length){el.innerHTML=html+'<div class="empty">טרם התקבלו דיווחים</div>';return;}
   html+=`<div class="section-label">דיווחים (30 ימים אחרונים)</div>`;
   reports.forEach(r=>{
-    const c=r.critical_count||0,l=r.low_count||0,toOrder=r.items_to_order||0;
+    const c=r.critical_count||0,l=r.low_count||0,u=r.unknown_count||0,toOrder=r.items_to_order||0;
     const dt=new Date(r.created_at).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-    html+=`<div class="card report-card" onclick="viewReport(${r.id})">
+    const allOk=c===0&&toOrder===0&&u===0;
+    html+=`<div class="card" style="cursor:pointer" onclick="viewReport(${r.id})">
       <div style="display:flex;align-items:center;gap:10px">
-        <div style="font-size:20px">${ICONS[r.department]||'📦'}</div>
+        <div style="font-size:22px">${ICONS[r.department]||'📦'}</div>
         <div style="flex:1">
           <div style="font-weight:600;font-size:13px">${DEPTS[r.department]||r.department}</div>
           <div style="font-size:11px;color:#6b7c93">${dt} · ${r.total_items||0} פריטים</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
-          ${toOrder>0?`<span class="badge badge-red">להזמין: ${toOrder} פריטים</span>`:''}
+          ${toOrder>0?`<span class="badge badge-red">להזמין: ${toOrder}</span>`:''}
           ${c>0?`<span class="badge badge-orange">${c} חסרים</span>`:''}
-          ${c===0&&toOrder===0?`<span class="badge badge-green">תקין</span>`:''}
+          ${u>0?`<span class="badge badge-gray">${u} לא נבדקו</span>`:''}
+          ${allOk?`<span class="badge badge-green">✓ תקין</span>`:''}
         </div>
       </div>
     </div>`;
@@ -328,62 +473,66 @@ function renderReports(){
 }
 
 function viewReport(id){
-  const r=reports.find(x=>x.id==id); if(!r)return;
-  document.getElementById('m-report-title').textContent=`דיווח — ${DEPTS[r.department]} · ${new Date(r.created_at).toLocaleDateString('he-IL')}`;
+  const r=reports.find(x=>x.id==id);if(!r)return;
+  const dt=new Date(r.created_at).toLocaleDateString('he-IL');
+  document.getElementById('m-report-title').textContent=`${DEPTS[r.department]} · ${dt}`;
   const items=(r.report_items||[]).sort((a,b)=>{
-    const ord={critical:0,low:1,ok:2,unknown:3};
-    return (ord[a.status]||3)-(ord[b.status]||3);
+    const o={critical:0,low:1,ok:2,unknown:3};
+    return(o[a.status]||3)-(o[b.status]||3);
   });
-  let html=`<table class="order-table">
-    <tr><th>מוצר</th><th>יש בפועל</th><th>נדרש</th><th>להזמין</th></tr>`;
+  let html=`<table class="report-table">
+    <tr><th>מוצר</th><th>מצוי</th><th>דרוש</th><th>הפרש</th><th>הערה</th></tr>`;
   items.forEach(it=>{
-    const need=it.order_qty||0;
-    const rowCls=it.status==='critical'?'critical':need>0?'need-order':'';
-    const valStr=it.actual_qty!==null&&it.actual_qty!==undefined?it.actual_qty:'—';
+    const diff=it.actual_qty!==null&&it.actual_qty!==undefined?it.actual_qty-(it.min_stock||0):null;
+    const notChecked=it.actual_qty===null||it.actual_qty===undefined;
+    const rowCls=notChecked?'row-unk':diff<0?'row-crit':diff>0?'row-surplus':'';
+    const diffStr=notChecked?'—':diff<0?`<span class="diff-neg">${diff}</span>`:diff>0?`<span class="diff-pos">+${diff}</span>`:`<span class="diff-zero">0</span>`;
+    const actualStr=notChecked?'<span style="color:#999">לא נבדק</span>':`${it.actual_qty} ${it.unit||''}`;
+    // Auto note + manual note
+    let autoNote=notChecked?'':diff<0?`חסר ${Math.abs(diff)} יח'`:diff>0?`עודף ${diff} יח'`:'';
+    const manualNote=it.note||'';
+    const fullNote=[autoNote,manualNote].filter(Boolean).join(' · ');
     html+=`<tr class="${rowCls}">
-      <td style="font-size:11px;max-width:130px">${it.product_name}</td>
-      <td style="text-align:center">${valStr} ${it.unit||''}</td>
-      <td style="text-align:center">${it.min_stock||'—'}</td>
-      <td style="text-align:center;font-weight:${need>0?'700':'400'};color:${need>0?'#c0392b':'#1e8449'}">${need>0?need:'✓'}</td>
+      <td style="font-size:11px;max-width:120px;font-weight:500">${it.product_name}</td>
+      <td style="text-align:center;font-size:11px">${actualStr}</td>
+      <td style="text-align:center;font-size:11px">${it.min_stock||'—'}</td>
+      <td style="text-align:center">${diffStr}</td>
+      <td style="font-size:10px;color:#666">${fullNote}</td>
     </tr>`;
   });
   html+=`</table>`;
   document.getElementById('m-report-content').innerHTML=html;
-  document.getElementById('btn-dl-report').onclick=function(){exportReportExcel(r);};
+  document.getElementById('btn-dl-report').onclick=()=>exportExcel(r);
   openM('m-report');
 }
 
-function exportReportExcel(r){
-  const items=(r.report_items||[]).sort((a,b)=>{const o={critical:0,low:1,ok:2,unknown:3};return(o[a.status]||3)-(o[b.status]||3);});
+function exportExcel(r){
   const dt=new Date(r.created_at).toLocaleDateString('he-IL');
+  const items=(r.report_items||[]).sort((a,b)=>{const o={critical:0,low:1,ok:2,unknown:3};return(o[a.status]||3)-(o[b.status]||3);});
   const rows=[
-    ['דיווח מלאי — '+DEPTS[r.department],'','','',''],
-    ['תאריך: '+dt,'','','',''],
-    ['','','','',''],
-    ['שם מוצר','קטגוריה','כמות קיימת','כמות נדרשת','כמות להזמנה'],
+    [`דיווח מלאי — ${DEPTS[r.department]}`,'','','','',''],
+    [`תאריך: ${dt}`,'','','','',''],
+    [''],
+    ['שם מוצר','קטגוריה','כמות מצויה','כמות נדרשת','הפרש','הערה'],
   ];
   items.forEach(it=>{
-    rows.push([
-      it.product_name,
-      it.category||'',
-      it.actual_qty!==null&&it.actual_qty!==undefined?it.actual_qty:'לא דווח',
-      it.min_stock||'',
-      it.order_qty>0?it.order_qty:0
-    ]);
+    const notChecked=it.actual_qty===null||it.actual_qty===undefined;
+    const diff=notChecked?'לא נבדק':(it.actual_qty-(it.min_stock||0));
+    const autoNote=notChecked?'':diff<0?`חסר ${Math.abs(diff)} יח'`:diff>0?`עודף ${diff} יח'`:'תקין';
+    const manualNote=it.note||'';
+    rows.push([it.product_name,it.category||'',notChecked?'לא נבדק':it.actual_qty,it.min_stock||0,notChecked?'—':diff,[autoNote,manualNote].filter(Boolean).join(' · ')]);
   });
-  // Summary row
   rows.push(['']);
-  const toOrder=items.filter(i=>i.order_qty>0).length;
-  rows.push(['סה"כ פריטים להזמנה:','','','',toOrder]);
-  
+  rows.push([`פריטים להזמנה:`,'',(r.items_to_order||0)+'','','','']);
+  rows.push([`לא נבדקו:`,'',(r.unknown_count||0)+'','','','']);
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:40},{wch:15},{wch:12},{wch:12},{wch:12}];
-  XLSX.utils.book_append_sheet(wb,ws,'דיווח מלאי');
+  ws['!cols']=[{wch:40},{wch:15},{wch:12},{wch:12},{wch:10},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws,'דיווח');
   XLSX.writeFile(wb,`דיווח_מלאי_${DEPTS[r.department]}_${dt.replace(/\//g,'-')}.xlsx`);
 }
 
-// ── ADMIN PRODUCTS ─────────────────────────────────────────────
+// ── ADMIN PRODUCTS ──────────────────────────────────────────────
 function filterDept(d,el){
   currentDeptFilter=d;
   document.querySelectorAll('[onclick^="filterDept"]').forEach(b=>{b.className='btn btn-sm btn-outline';});
@@ -414,20 +563,9 @@ function renderProducts(){
   });
   el.innerHTML=html;
 }
-
 document.getElementById('p-search').oninput=renderProducts;
-document.getElementById('btn-add').onclick=function(){
-  editId=null;
-  document.getElementById('m-product-title').textContent='הוספת מוצר';
-  ['f-name','f-cat','f-min','f-unit'].forEach(i=>document.getElementById(i).value='');
-  document.getElementById('f-dept').value='reception';
-  openM('m-product');
-};
-document.getElementById('btn-cancel-product').onclick=function(){closeM('m-product');};
-document.getElementById('btn-cancel-move').onclick=function(){closeM('m-move');};
-document.getElementById('btn-cancel-del').onclick=function(){closeM('m-delete');};
-document.getElementById('btn-close-report').onclick=function(){closeM('m-report');};
-
+document.getElementById('btn-add').onclick=()=>{editId=null;document.getElementById('m-product-title').textContent='הוספת מוצר';['f-name','f-cat','f-min','f-unit'].forEach(i=>document.getElementById(i).value='');document.getElementById('f-dept').value='reception';openM('m-product');};
+document.getElementById('btn-cancel-product').onclick=()=>closeM('m-product');
 document.getElementById('btn-save-product').onclick=async function(){
   const name=document.getElementById('f-name').value.trim();
   const cat=document.getElementById('f-cat').value.trim();
@@ -437,139 +575,244 @@ document.getElementById('btn-save-product').onclick=async function(){
   if(!name){document.getElementById('f-name').focus();return;}
   const dup=products.find(p=>p.name.toLowerCase()===name.toLowerCase()&&p.id!=editId);
   if(dup){toast('מוצר זה כבר קיים ב'+DEPTS[dup.department]);return;}
-  if(editId){
-    await db.from('products').update({name,category:cat,department:dept,min_stock:min,unit}).eq('id',editId);
-    toast('עודכן');
-  } else {
-    await db.from('products').insert({name,category:cat,department:dept,min_stock:min,unit});
-    toast('נוסף');
-  }
-  closeM('m-product'); await loadProducts(); renderProducts();
+  if(editId){await db.from('products').update({name,category:cat,department:dept,min_stock:min,unit}).eq('id',editId);toast('עודכן');}
+  else{await db.from('products').insert({name,category:cat,department:dept,min_stock:min,unit});toast('נוסף');}
+  closeM('m-product');await loadProducts();renderProducts();
 };
+function openEdit(id){const p=products.find(x=>x.id==id);if(!p)return;editId=id;document.getElementById('m-product-title').textContent='עריכת מוצר';document.getElementById('f-name').value=p.name;document.getElementById('f-cat').value=p.category;document.getElementById('f-min').value=p.min_stock;document.getElementById('f-unit').value=p.unit;document.getElementById('f-dept').value=p.department;openM('m-product');}
+function openMove(id){moveId=id;const p=products.find(x=>x.id==id);document.getElementById('m-move-name').textContent=p.name;let html='';Object.entries(DEPTS).forEach(([k,n])=>{const cur=k===p.department;html+=`<button class="move-btn ${cur?'cur':''}" ${cur?'':'onclick="doMove(\''+k+'\')"'}>${n}${cur?' ← נוכחית':''}</button>`;});document.getElementById('m-move-list').innerHTML=html;openM('m-move');}
+async function doMove(dept){await db.from('products').update({department:dept}).eq('id',moveId);closeM('m-move');toast('הועבר ל'+DEPTS[dept]);await loadProducts();renderProducts();}
+function openDel(id){delId=id;const p=products.find(x=>x.id==id);document.getElementById('m-del-name').textContent=p?p.name:'';openM('m-delete');}
+document.getElementById('btn-confirm-del').onclick=async function(){await db.from('products').update({is_active:false}).eq('id',delId);closeM('m-delete');toast('הוסר');await loadProducts();renderProducts();};
+document.getElementById('btn-cancel-move').onclick=()=>closeM('m-move');
+document.getElementById('btn-cancel-del').onclick=()=>closeM('m-delete');
 
-document.getElementById('btn-confirm-del').onclick=async function(){
-  await db.from('products').update({is_active:false}).eq('id',delId);
-  closeM('m-delete'); toast('הוסר'); await loadProducts(); renderProducts();
-};
-
-function openEdit(id){
-  const p=products.find(x=>x.id==id);if(!p)return;
-  editId=id;
-  document.getElementById('m-product-title').textContent='עריכת מוצר';
-  document.getElementById('f-name').value=p.name;
-  document.getElementById('f-cat').value=p.category;
-  document.getElementById('f-min').value=p.min_stock;
-  document.getElementById('f-unit').value=p.unit;
-  document.getElementById('f-dept').value=p.department;
-  openM('m-product');
-}
-function openMove(id){
-  moveId=id;const p=products.find(x=>x.id==id);
-  document.getElementById('m-move-name').textContent=p.name;
+// ── INQUIRIES ───────────────────────────────────────────────────
+function renderInquiries(){
+  const el=document.getElementById('inq-list');
+  if(!inquiries.length){el.innerHTML='<div class="empty">אין מוצרים בבירור</div>';return;}
   let html='';
-  Object.entries(DEPTS).forEach(([k,n])=>{
-    const cur=k===p.department;
-    html+=`<button class="move-btn ${cur?'cur':''}" ${cur?'':'onclick="doMove(\''+k+'\')"'}>${n}${cur?' ← נוכחית':''}</button>`;
+  inquiries.forEach((inq,i)=>{
+    const stMap={approved:{cls:'status-approved',label:'✅ אושר'},pending:{cls:'status-pending',label:'🟡 בבירור'},rejected:{cls:'status-rejected',label:'❌ לא אושר'}};
+    const st=stMap[inq.status]||stMap.pending;
+    let suppTable='';
+    if(inq.suppliers&&inq.suppliers.length>0){
+      const minPrice=Math.min(...inq.suppliers.filter(s=>s.price).map(s=>parseFloat(s.price)));
+      suppTable=`<div style="margin-top:8px"><table class="price-table"><tr><th>ספק</th><th>מחיר</th><th>הערה</th></tr>`;
+      inq.suppliers.forEach(s=>{
+        const isBest=parseFloat(s.price)===minPrice&&s.price;
+        suppTable+=`<tr class="${isBest?'price-best':''}"><td>${s.name}</td><td>${s.price?'₪'+s.price:'-'}${s.sale?`<span class="price-sale">מבצע</span>`:''}</td><td style="font-size:10px">${s.note||''}</td></tr>`;
+      });
+      suppTable+=`</table></div>`;
+    }
+    html+=`<div class="inquiry-card">
+      <div class="inquiry-header">
+        <span>${inq.name}</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="status-pill ${st.cls}">${st.label}</span>
+          <button class="ibtn" onclick="openEditInq(${i})" style="background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.3);color:#fff">✎</button>
+          <button class="ibtn del" onclick="deleteInq(${i})" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff">✕</button>
+        </div>
+      </div>
+      <div class="inquiry-body">
+        ${inq.supplier?`<div class="inquiry-row"><span class="inquiry-label">ספק נוכחי</span><span>${inq.supplier}</span></div>`:''}
+        ${inq.price?`<div class="inquiry-row"><span class="inquiry-label">מחיר נוכחי</span><span>₪${inq.price}</span></div>`:''}
+        ${inq.expiry?`<div class="inquiry-row"><span class="inquiry-label">תוקף</span><span>${inq.expiry}</span></div>`:''}
+        ${inq.notes?`<div class="inquiry-row"><span class="inquiry-label">הערות</span><span style="font-size:11px">${inq.notes}</span></div>`:''}
+        ${suppTable}
+      </div>
+    </div>`;
   });
-  document.getElementById('m-move-list').innerHTML=html;
-  openM('m-move');
+  el.innerHTML=html;
 }
-async function doMove(dept){
-  await db.from('products').update({department:dept}).eq('id',moveId);
-  closeM('m-move');toast('הועבר ל'+DEPTS[dept]);await loadProducts();renderProducts();
+
+let supplierRowCount=0;
+function addSupplierRow(name='',price='',note='',sale=false){
+  const id=supplierRowCount++;
+  const div=document.createElement('div');
+  div.id='sr-'+id;
+  div.style.cssText='display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center';
+  div.innerHTML=`<input class="f-input" placeholder="שם ספק" id="sr-name-${id}" value="${name}" style="margin:0;padding:7px">
+    <input class="f-input" placeholder="מחיר ₪" id="sr-price-${id}" value="${price}" style="margin:0;padding:7px" type="number">
+    <button onclick="document.getElementById('sr-${id}').remove()" style="background:#fff0f0;border:1px solid #e74c3c;border-radius:6px;padding:6px 10px;cursor:pointer;color:#c0392b">✕</button>`;
+  document.getElementById('inq-suppliers-list').appendChild(div);
 }
-function openDel(id){
-  delId=id;const p=products.find(x=>x.id==id);
-  document.getElementById('m-del-name').textContent=p?p.name:'';
-  openM('m-delete');
+
+function openAddInq(){
+  editInqId=null;
+  document.getElementById('m-inq-title').textContent='הוספת מוצר לבירור';
+  ['inq-name','inq-supplier','inq-price','inq-expiry','inq-notes'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('inq-status').value='pending';
+  document.getElementById('inq-suppliers-list').innerHTML='';
+  supplierRowCount=0;
+  openM('m-inquiry');
+}
+function openEditInq(i){
+  editInqId=i;
+  const inq=inquiries[i];
+  document.getElementById('m-inq-title').textContent='עריכת בירור';
+  document.getElementById('inq-name').value=inq.name||'';
+  document.getElementById('inq-supplier').value=inq.supplier||'';
+  document.getElementById('inq-price').value=inq.price||'';
+  document.getElementById('inq-expiry').value=inq.expiry||'';
+  document.getElementById('inq-notes').value=inq.notes||'';
+  document.getElementById('inq-status').value=inq.status||'pending';
+  document.getElementById('inq-suppliers-list').innerHTML='';
+  supplierRowCount=0;
+  (inq.suppliers||[]).forEach(s=>addSupplierRow(s.name,s.price,s.note,s.sale));
+  openM('m-inquiry');
+}
+function deleteInq(i){inquiries.splice(i,1);saveInquiries();renderInquiries();}
+
+document.getElementById('btn-add-inq').onclick=openAddInq;
+document.getElementById('btn-cancel-inq').onclick=()=>closeM('m-inquiry');
+document.getElementById('btn-save-inq').onclick=function(){
+  const name=document.getElementById('inq-name').value.trim();
+  if(!name){toast('חובה להזין שם מוצר');return;}
+  const suppliers=[];
+  document.querySelectorAll('[id^="sr-name-"]').forEach(el=>{
+    const id=el.id.replace('sr-name-','');
+    const n=el.value.trim();
+    const p=document.getElementById('sr-price-'+id)?.value;
+    if(n)suppliers.push({name:n,price:p||'',note:'',sale:false});
+  });
+  const inq={name,supplier:document.getElementById('inq-supplier').value,price:document.getElementById('inq-price').value,expiry:document.getElementById('inq-expiry').value,notes:document.getElementById('inq-notes').value,status:document.getElementById('inq-status').value,suppliers};
+  if(editInqId!==null)inquiries[editInqId]=inq;
+  else inquiries.push(inq);
+  saveInquiries();closeM('m-inquiry');renderInquiries();toast('נשמר');
+};
+
+// ── PRICE COMPARISON ────────────────────────────────────────────
+let priceData={};
+function renderPriceCompare(){
+  const el=document.getElementById('price-compare');
+  if(!Object.keys(priceData).length){el.innerHTML='<div class="empty">העלה מחירון ספק לראות השוואה</div>';return;}
+  const allProds=new Set();
+  const supplierNames=Object.keys(priceData);
+  Object.values(priceData).forEach(d=>Object.keys(d).forEach(k=>allProds.add(k)));
+  let html=`<div class="section-label">השוואת מחירים (${allProds.size} מוצרים)</div>
+    <table class="compare-table"><tr><th>מוצר</th>${supplierNames.map(s=>`<th>${SUPPLIERS[s]||s}</th>`).join('')}</tr>`;
+  allProds.forEach(prod=>{
+    const prices=supplierNames.map(s=>priceData[s]&&priceData[s][prod]?parseFloat(priceData[s][prod]):null);
+    const validPrices=prices.filter(p=>p!==null);
+    const minPrice=validPrices.length?Math.min(...validPrices):null;
+    html+=`<tr><td style="max-width:120px;font-size:10px">${prod}</td>`;
+    prices.forEach(p=>{
+      const isBest=p!==null&&p===minPrice;
+      html+=`<td class="${isBest?'best-price':''}" style="text-align:center">${p!==null?'₪'+p.toFixed(2):'-'}</td>`;
+    });
+    html+=`</tr>`;
+  });
+  html+=`</table>`;
+  el.innerHTML=html;
+}
+
+async function uploadPriceFile(){
+  const file=document.getElementById('price-file').files[0];
+  const supplier=document.getElementById('price-supplier').value;
+  if(!file){toast('בחרי קובץ קודם');return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{header:1});
+      const suppData={};
+      data.forEach(row=>{
+        if(row.length>=2&&row[0]&&row[1]){
+          const name=String(row[0]).trim();
+          const price=parseFloat(String(row[1]).replace(/[₪,]/g,''));
+          if(name&&!isNaN(price))suppData[name]=price;
+        }
+      });
+      priceData[supplier]=suppData;
+      toast(`נטענו ${Object.keys(suppData).length} מוצרים מ${SUPPLIERS[supplier]||supplier}`);
+      renderPriceCompare();
+    }catch(err){toast('שגיאה בקריאת הקובץ');}
+  };
+  reader.readAsBinaryString(file);
 }
 
 // ── DEPUTY ─────────────────────────────────────────────────────
+function updateSubmitBtn(){
+  const btn=document.getElementById('btn-submit');
+  if(isDeadlinePassed()){
+    btn.textContent='⛔ המועד עבר — לא ניתן לשלוח';
+    btn.className='btn btn-disabled';
+    btn.onclick=null;
+  } else {
+    btn.textContent='שלח דיווח מלאי ←';
+    btn.className='btn btn-primary';
+    btn.onclick=submitReport;
+  }
+}
+
 function renderDepItems(){
   const dp=products.filter(p=>p.department===currentDept);
   if(!dp.length){document.getElementById('dep-items').innerHTML='<div class="empty">אין מוצרים במחלקה זו</div>';return;}
-  let html='';
   const cats={};
   dp.forEach(p=>{if(!cats[p.category])cats[p.category]=[];cats[p.category].push(p);});
+  let html='';
   Object.entries(cats).forEach(([cat,items])=>{
     html+=`<div class="section-label" style="padding:0 .9rem">${cat}</div>`;
     items.forEach(p=>{
       const v=depValues[p.id]!==undefined?depValues[p.id]:'';
+      const note=depNotes[p.id]||'';
       const st=getStatus(v,p.min_stock);
       const dc={ok:'dot-ok',low:'dot-low',crit:'dot-crit',unk:'dot-unk'}[st];
-      const orderQty=getOrderQty(v,p.min_stock);
-      const orderBadge=orderQty===null?'':`<span class="order-badge ${orderQty===0?'ob-ok':orderQty<p.min_stock*.5?'ob-crit':'ob-low'}">${orderQty===0?'✓ מספיק':'להזמין: '+orderQty+' '+p.unit}</span>`;
-      html+=`<div class="irow" id="ir-${p.id}" style="margin:.4rem .9rem">
+      html+=`<div class="irow" style="margin:.4rem .9rem" id="ir-${p.id}">
         <div class="irow-top"><div class="dot ${dc}" id="dot-${p.id}"></div><div class="irow-name">${p.name}</div></div>
-        <div class="irow-tags"><span class="ptag">מינ׳ ${p.min_stock} ${p.unit}</span><span id="badge-${p.id}">${orderBadge}</span></div>
+        <div class="irow-meta">קטגוריה: ${p.category} · מינימום: ${p.min_stock} ${p.unit}</div>
         <div class="irow-footer">
           <div class="irow-label">יש כרגע:</div>
-          <input type="number" class="qty" min="0" value="${v}" placeholder="0" oninput="updDep(${p.id},${p.min_stock},'${p.unit}',this.value)">
+          <input type="number" class="qty" min="0" value="${v}" placeholder="0" oninput="updDep(${p.id},${p.min_stock},this.value)">
           <span class="qty-unit">${p.unit}</span>
         </div>
+        <input type="text" class="note-input" maxlength="100" placeholder="הערה (אופציונלי)..." value="${note}" oninput="depNotes[${p.id}]=this.value">
       </div>`;
     });
   });
   document.getElementById('dep-items').innerHTML=html;
 }
 
-function updDep(id,min,unit,v){
+function updDep(id,min,v){
   depValues[id]=v;
   const st=getStatus(v,min);
   const dot=document.getElementById('dot-'+id);
   if(dot)dot.className='dot '+{ok:'dot-ok',low:'dot-low',crit:'dot-crit',unk:'dot-unk'}[st];
-  const orderQty=getOrderQty(v,min);
-  const badge=document.getElementById('badge-'+id);
-  if(badge&&orderQty!==null){
-    badge.innerHTML=`<span class="order-badge ${orderQty===0?'ob-ok':orderQty<min*.5?'ob-crit':'ob-low'}">${orderQty===0?'✓ מספיק':'להזמין: '+orderQty+' '+unit}</span>`;
-  }
 }
 
-document.getElementById('btn-submit').onclick=async function(){
+async function submitReport(){
   const dp=products.filter(p=>p.department===currentDept);
   let ok=0,low=0,crit=0,unk=0,toOrder=0;
   const items=dp.map(p=>{
     const v=depValues[p.id];
     const qty=v!==undefined&&v!==''?parseInt(v):null;
     const st=getStatus(v,p.min_stock);
-    const orderQty=getOrderQty(v,p.min_stock);
+    const diff=qty!==null?qty-p.min_stock:null;
+    const orderQty=diff!==null&&diff<0?Math.abs(diff):0;
     if(st==='ok')ok++;else if(st==='low')low++;else if(st==='crit')crit++;else unk++;
-    if(orderQty&&orderQty>0)toOrder++;
-    return{product_id:p.id,product_name:p.name,category:p.category,actual_qty:qty,min_stock:p.min_stock,unit:p.unit,status:st==='unk'?'unknown':st,order_qty:orderQty||0};
+    if(orderQty>0)toOrder++;
+    return{product_id:p.id,product_name:p.name,category:p.category||'',actual_qty:qty,min_stock:p.min_stock,unit:p.unit,status:st==='unk'?'unknown':st,order_qty:orderQty,note:depNotes[p.id]||''};
   });
-  const {data:rep}=await db.from('inventory_reports').insert({
-    department:currentDept,submitted_by:DEPTS[currentDept],
-    total_items:dp.length,ok_count:ok,low_count:low,critical_count:crit,unknown_count:unk,items_to_order:toOrder
-  }).select().single();
+  const btn=document.getElementById('btn-submit');
+  btn.textContent='שולח...';btn.disabled=true;
+  const {data:rep}=await db.from('inventory_reports').insert({department:currentDept,submitted_by:DEPTS[currentDept],total_items:dp.length,ok_count:ok,low_count:low,critical_count:crit,unknown_count:unk,items_to_order:toOrder}).select().single();
   if(rep)await db.from('report_items').insert(items.map(i=>({...i,report_id:rep.id})));
-  
-  lastReportData=rep; lastReportItems=items;
-  
+  lastReportForDownload={...rep,report_items:items,created_at:new Date().toISOString()};
   let html=`<div style="font-size:13px;font-weight:700;margin-bottom:10px">סיכום — ${DEPTS[currentDept]}</div>`;
-  if(toOrder>0)html+=`<div class="rrow"><span>🛒 פריטים להזמנה</span><span class="rv-crit">${toOrder} פריטים</span></div>`;
-  if(ok)html+=`<div class="rrow"><span>✅ מלאי תקין</span><span class="rv-ok">${ok} פריטים</span></div>`;
-  if(low)html+=`<div class="rrow"><span>🟡 מלאי נמוך</span><span class="rv-low">${low} פריטים</span></div>`;
-  if(crit)html+=`<div class="rrow"><span>🔴 חסר לחלוטין</span><span class="rv-crit">${crit} פריטים</span></div>`;
+  if(toOrder>0)html+=`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #e0e6ed;font-size:13px"><span>🛒 להזמנה</span><span style="color:#c0392b;font-weight:700">${toOrder} פריטים</span></div>`;
+  if(ok)html+=`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #e0e6ed;font-size:13px"><span>✅ תקין</span><span style="color:#1e8449;font-weight:600">${ok}</span></div>`;
+  if(low)html+=`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #e0e6ed;font-size:13px"><span>🟡 נמוך</span><span style="color:#d68910;font-weight:600">${low}</span></div>`;
+  if(crit)html+=`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #e0e6ed;font-size:13px"><span>🔴 חסר</span><span style="color:#c0392b;font-weight:700">${crit}</span></div>`;
+  if(unk)html+=`<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:13px"><span>⬜ לא נבדק</span><span style="color:#6b7c93">${unk}</span></div>`;
   document.getElementById('success-summary').innerHTML=html;
-  
-  const fakeReport={...rep,report_items:items,created_at:new Date().toISOString()};
-  document.getElementById('btn-download-excel').onclick=function(){exportReportExcel(fakeReport);};
   show('s-success');
-};
+}
 
-document.getElementById('btn-download-excel').onclick=function(){
-  if(lastReportData&&lastReportItems){
-    exportReportExcel({...lastReportData,report_items:lastReportItems,created_at:new Date().toISOString()});
-  }
-};
-
+document.getElementById('btn-dl-success').onclick=()=>{if(lastReportForDownload)exportExcel(lastReportForDownload);};
+document.getElementById('btn-close-report').onclick=()=>closeM('m-report');
 document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
-
-// Need to add order_qty column to report_items table
-// Run this in Supabase SQL Editor:
-// ALTER TABLE report_items ADD COLUMN IF NOT EXISTS order_qty INTEGER DEFAULT 0;
-// ALTER TABLE report_items ADD COLUMN IF NOT EXISTS category TEXT DEFAULT '';
-// ALTER TABLE inventory_reports ADD COLUMN IF NOT EXISTS items_to_order INTEGER DEFAULT 0;
 </script>
 </body>
 </html>
