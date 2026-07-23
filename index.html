@@ -825,7 +825,10 @@ function renderProducts(){
         <span class="ptag">${p.category}</span>
         <span class="ptag">מינ׳ ${p.min_stock}</span>
         ${p.max_stock?`<span class="ptag">מקס׳ ${p.max_stock}</span>`:''}
-        <span class="ptag">${p.unit}</span></div></div>`;
+        <span class="ptag">${p.unit}</span>
+        ${p.supplier?`<span class="ptag" style="background:#e8f0f7;color:#1a3a52">🏢 ${p.supplier}</span>`:''}
+        ${p.price?`<span class="ptag" style="background:#e8f8f0;color:#1e8449">₪${p.price}</span>`:''}
+        </div></div>`;
     });
   });
   el.innerHTML=html;
