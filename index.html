@@ -172,6 +172,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a52}
     <button class="tab" id="tab-check-btn">בדיקה מול ספק</button>
     <button class="tab" id="tab-prod-btn">מוצרים</button>
     <button class="tab" id="tab-hist-btn">היסטוריה</button>
+    <button class="tab" id="tab-inv-btn">חשבוניות</button>
   </div>
 
   <!-- REPORTS TAB -->
@@ -208,6 +209,57 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a52}
     </div>
     <div class="scroll" id="p-list"></div>
     <div class="fab"><button class="btn btn-primary" id="btn-add" style="margin:0">+ הוסף מוצר</button></div>
+  </div>
+
+  <!-- INVOICES TAB -->
+  <div id="tab-inv" class="scroll" style="display:none">
+    <div class="alert-blue" style="margin-bottom:12px">
+      📄 העלי תעודות משלוח וחשבוניות מרכזות לבקרה אוטומטית
+    </div>
+
+    <!-- Upload section -->
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px">העלאת מסמך</div>
+      <label class="f-label">סוג מסמך</label>
+      <select id="inv-type" style="margin-bottom:8px">
+        <option value="delivery">תעודת משלוח</option>
+        <option value="invoice">חשבונית מרכזת</option>
+      </select>
+      <label class="f-label">ספק</label>
+      <select id="inv-supplier" style="margin-bottom:8px">
+        <option value="וטמרקט">וטמרקט</option>
+        <option value="מדימרקט">מדימרקט</option>
+        <option value="לינביץ">לינביץ</option>
+        <option value="ביומד">ביומד</option>
+        <option value="אחר">אחר</option>
+      </select>
+      <label class="f-label">חודש</label>
+      <input type="month" id="inv-month" style="margin-bottom:8px">
+      <label class="f-label">קובץ PDF</label>
+      <input type="file" id="inv-file" accept=".pdf,.jpg,.jpeg,.png,.webp" style="margin-bottom:10px;padding:6px;font-size:12px">
+      <button class="btn btn-primary" onclick="uploadInvoice()" style="margin:0">📄 העלה וקרא אוטומטית</button>
+      <div id="inv-loading" style="display:none;text-align:center;padding:1rem;color:#6b7c93;font-size:13px">
+        ⏳ Claude קורא את המסמך...
+      </div>
+    </div>
+
+    <!-- Month selector for comparison -->
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px">בקרת חשבון חודשית</div>
+      <label class="f-label">בחרי חודש וספק להשוואה</label>
+      <select id="cmp-supplier" style="margin-bottom:8px">
+        <option value="וטמרקט">וטמרקט</option>
+        <option value="מדימרקט">מדימרקט</option>
+        <option value="לינביץ">לינביץ</option>
+        <option value="ביומד">ביומד</option>
+        <option value="אחר">אחר</option>
+      </select>
+      <input type="month" id="cmp-month" style="margin-bottom:8px">
+      <button class="btn btn-outline" onclick="compareInvoices()" style="margin:0">🔍 הפעל בקרה</button>
+    </div>
+
+    <!-- Results -->
+    <div id="inv-results"></div>
   </div>
 
   <!-- HISTORY TAB -->
@@ -425,7 +477,7 @@ document.getElementById('btn-back').onclick=()=>show('s-login');
 function switchTab(name,el){
   document.querySelectorAll('#s-admin .tab').forEach(t=>t.classList.remove('on'));
   el.classList.add('on');
-  const tabs=['rep','ord','ship','check','prod','hist'];
+  const tabs=['rep','ord','ship','check','prod','hist','inv'];
   tabs.forEach(t=>{
     const el2=document.getElementById('tab-'+t);
     if(!el2)return;
@@ -943,6 +995,237 @@ document.getElementById('btn-send-urgent').onclick=function(){
 document.getElementById('btn-dl-success').onclick=()=>{if(lastReport)exportExcel(lastReport);};
 document.getElementById('btn-close-report').onclick=()=>closeM('m-report');
 document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+// ── INVOICES ────────────────────────────────────────────────
+document.getElementById('tab-inv-btn').onclick=function(){switchTab('inv',this);};
+
+// Set default month to current
+(function(){
+  const now=new Date();
+  const ym=now.toISOString().slice(0,7);
+  const el1=document.getElementById('inv-month');
+  const el2=document.getElementById('cmp-month');
+  if(el1)el1.value=ym;
+  if(el2)el2.value=ym;
+})();
+
+// Storage for invoice data
+let invoiceData=JSON.parse(localStorage.getItem('invoices_v1')||'{}');
+function saveInvoiceData(){localStorage.setItem('invoices_v1',JSON.stringify(invoiceData));}
+
+async function uploadInvoice(){
+  const file=document.getElementById('inv-file').files[0];
+  if(!file){toast('בחרי קובץ PDF');return;}
+  const type=document.getElementById('inv-type').value;
+  const supplier=document.getElementById('inv-supplier').value;
+  const month=document.getElementById('inv-month').value;
+  if(!month){toast('בחרי חודש');return;}
+
+  document.getElementById('inv-loading').style.display='block';
+  document.getElementById('inv-results').innerHTML='';
+
+  try{
+    // Read PDF as base64
+    const base64=await new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=()=>res(r.result.split(',')[1]);
+      r.onerror=()=>rej(new Error('שגיאה בקריאת הקובץ'));
+      r.readAsDataURL(file);
+    });
+
+    // Detect file type
+    const isPDF=file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf');
+    const mediaType=isPDF?'application/pdf':(file.type||'image/jpeg');
+    const srcType=isPDF?'document':'image';
+
+    // Send to Claude API
+    const prompt=type==='delivery'
+      ? `זוהי תעודת משלוח מספק ${supplier}. חלץ ממנה את כל הפריטים. החזר JSON בלבד במבנה הבא:
+{"items":[{"name":"שם המוצר","quantity":כמות,"unit":"יחידה","unit_price":מחיר_ליחידה,"total_price":סה"כ}]}
+אם שדה לא קיים, השתמש ב-null. רק JSON, ללא טקסט נוסף.`
+      : `זוהי חשבונית מרכזת מספק ${supplier}. חלץ ממנה את כל הפריטים. החזר JSON בלבד במבנה הבא:
+{"invoice_number":"מספר חשבונית","items":[{"name":"שם המוצר","quantity":כמות,"unit":"יחידה","unit_price":מחיר_ליחידה,"total_price":סה"כ}],"total":סה"כ_חשבונית}
+רק JSON, ללא טקסט נוסף.`;
+
+    const response=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:4000,
+        messages:[{role:'user',content:[
+          {type:srcType,source:{type:'base64',media_type:mediaType,data:base64}},
+          {type:'text',text:prompt}
+        ]}]
+      })
+    });
+
+    const data=await response.json();
+    const text=data.content?.map(c=>c.text||'').join('');
+    const clean=text.replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(clean);
+
+    // Store the data
+    const key=`${supplier}_${month}_${type}`;
+    if(!invoiceData[month])invoiceData[month]={};
+    if(!invoiceData[month][supplier])invoiceData[month][supplier]={deliveries:[],invoice:null};
+    
+    if(type==='delivery'){
+      invoiceData[month][supplier].deliveries.push({
+        filename:file.name,uploadedAt:Date.now(),items:parsed.items||[]
+      });
+    } else {
+      invoiceData[month][supplier].invoice={
+        filename:file.name,uploadedAt:Date.now(),
+        number:parsed.invoice_number,total:parsed.total,items:parsed.items||[]
+      };
+    }
+    saveInvoiceData();
+
+    // Show results
+    const typeHe=type==='delivery'?'תעודת משלוח':'חשבונית מרכזת';
+    const items=parsed.items||[];
+    let html=`<div class="card" style="border-color:#1e8449">
+      <div style="font-weight:700;color:#1e8449;margin-bottom:8px">✅ ${typeHe} נקראה בהצלחה</div>
+      <div style="font-size:12px;color:#6b7c93;margin-bottom:8px">${supplier} · ${month} · ${items.length} פריטים</div>
+      <table class="rtable"><tr><th>מוצר</th><th>כמות</th><th>מחיר יח'</th><th>סה"כ</th></tr>`;
+    items.forEach(it=>{
+      html+=`<tr><td style="font-size:11px">${it.name}</td>
+        <td style="text-align:center">${it.quantity||'—'} ${it.unit||''}</td>
+        <td style="text-align:center">${it.unit_price?'₪'+it.unit_price:'—'}</td>
+        <td style="text-align:center">${it.total_price?'₪'+it.total_price:'—'}</td></tr>`;
+    });
+    html+=`</table></div>`;
+    document.getElementById('inv-results').innerHTML=html;
+
+  } catch(err){
+    document.getElementById('inv-results').innerHTML=`<div class="alert-red">❌ שגיאה בקריאת הקובץ: ${err.message}</div>`;
+  } finally {
+    document.getElementById('inv-loading').style.display='none';
+  }
+}
+
+function compareInvoices(){
+  const supplier=document.getElementById('cmp-supplier').value;
+  const month=document.getElementById('cmp-month').value;
+  const el=document.getElementById('inv-results');
+
+  const monthData=invoiceData[month]?.[supplier];
+  if(!monthData){el.innerHTML='<div class="alert-yellow">⚠️ אין נתונים לחודש וספק אלה. העלי תעודות משלוח וחשבונית קודם.</div>';return;}
+  if(!monthData.invoice){el.innerHTML='<div class="alert-yellow">⚠️ חשבונית מרכזת טרם הועלתה לחודש זה.</div>';return;}
+  if(!monthData.deliveries.length){el.innerHTML='<div class="alert-yellow">⚠️ לא הועלו תעודות משלוח לחודש זה.</div>';return;}
+
+  // Aggregate deliveries
+  const deliveryTotals={};
+  const deliveryPrices={};
+  monthData.deliveries.forEach(d=>{
+    (d.items||[]).forEach(it=>{
+      const name=it.name;
+      deliveryTotals[name]=(deliveryTotals[name]||0)+(it.quantity||0);
+      if(it.unit_price)deliveryPrices[name]=it.unit_price;
+    });
+  });
+
+  // Compare with invoice
+  const invoiceItems={};
+  const invoicePrices={};
+  (monthData.invoice.items||[]).forEach(it=>{
+    invoiceItems[it.name]=(invoiceItems[it.name]||0)+(it.quantity||0);
+    if(it.unit_price)invoicePrices[it.name]=it.unit_price;
+  });
+
+  const allNames=new Set([...Object.keys(deliveryTotals),...Object.keys(invoiceItems)]);
+  const discrepancies=[];
+  const ok=[];
+
+  allNames.forEach(name=>{
+    const dqty=deliveryTotals[name]||0;
+    const iqty=invoiceItems[name]||0;
+    const dprice=deliveryPrices[name];
+    const iprice=invoicePrices[name];
+    const qtyMatch=Math.abs(dqty-iqty)<0.01;
+    const priceMatch=!dprice||!iprice||Math.abs(dprice-iprice)<0.01;
+    
+    if(!qtyMatch||!priceMatch){
+      discrepancies.push({name,dqty,iqty,dprice,iprice,qtyMatch,priceMatch});
+    } else {
+      ok.push({name,qty:dqty,price:dprice});
+    }
+  });
+
+  // Build report
+  const [y,m]=month.split('-');
+  const monthHe=new Date(parseInt(y),parseInt(m)-1,1).toLocaleString('he-IL',{month:'long',year:'numeric'});
+  
+  let html=`<div class="card" style="margin-bottom:10px">
+    <div style="font-weight:700;font-size:14px;margin-bottom:6px">דוח בקרה — ${supplier} · ${monthHe}</div>
+    <div style="display:flex;gap:10px;font-size:12px">
+      <span>${monthData.deliveries.length} תעודות משלוח</span>
+      <span>·</span>
+      <span>${monthData.invoice.number?'חשבונית '+monthData.invoice.number:''}</span>
+    </div>
+  </div>`;
+
+  if(discrepancies.length){
+    html+=`<div class="alert-red" style="margin-bottom:10px">🔴 נמצאו ${discrepancies.length} אי-התאמות</div>`;
+    html+=`<div class="section-label">אי-התאמות</div>`;
+    html+=`<table class="rtable"><tr><th>מוצר</th><th>תעודות</th><th>חשבונית</th><th>הפרש</th><th>בעיה</th></tr>`;
+    discrepancies.forEach(d=>{
+      const issues=[];
+      if(!d.qtyMatch)issues.push(`כמות: ${d.dqty} vs ${d.iqty}`);
+      if(!d.priceMatch)issues.push(`מחיר: ₪${d.dprice} vs ₪${d.iprice}`);
+      const diff=d.iqty-d.dqty;
+      html+=`<tr class="row-crit">
+        <td style="font-size:10px">${d.name}</td>
+        <td style="text-align:center;font-size:11px">${d.dqty}</td>
+        <td style="text-align:center;font-size:11px">${d.iqty}</td>
+        <td style="text-align:center"><span class="${diff>0?'diff-neg':'diff-pos'}">${diff>0?'+'+diff:diff}</span></td>
+        <td style="font-size:10px;color:#c0392b">${issues.join(' · ')}</td>
+      </tr>`;
+    });
+    html+=`</table>`;
+  } else {
+    html+=`<div class="alert-blue" style="margin-bottom:10px">✅ לא נמצאו אי-התאמות — הכל תואם!</div>`;
+  }
+
+  if(ok.length){
+    html+=`<div class="section-label" style="margin-top:10px">פריטים תקינים (${ok.length})</div>`;
+    html+=`<table class="rtable"><tr><th>מוצר</th><th>כמות</th><th>מחיר</th></tr>`;
+    ok.forEach(o=>{html+=`<tr><td style="font-size:10px">${o.name}</td><td style="text-align:center;font-size:11px">${o.qty}</td><td style="text-align:center;font-size:11px">${o.price?'₪'+o.price:'—'}</td></tr>`;});
+    html+=`</table>`;
+  }
+
+  // Export button
+  html+=`<button class="btn btn-green" onclick="exportCompareExcel('${supplier}','${month}')" style="margin-top:10px">⬇ הורד דוח Excel</button>`;
+  el.innerHTML=html;
+}
+
+function exportCompareExcel(supplier,month){
+  const monthData=invoiceData[month]?.[supplier];
+  if(!monthData)return;
+  const [y,m]=month.split('-');
+  const monthHe=new Date(parseInt(y),parseInt(m)-1,1).toLocaleString('he-IL',{month:'long',year:'numeric'});
+  
+  const deliveryTotals={};const deliveryPrices={};
+  monthData.deliveries.forEach(d=>{(d.items||[]).forEach(it=>{deliveryTotals[it.name]=(deliveryTotals[it.name]||0)+(it.quantity||0);if(it.unit_price)deliveryPrices[it.name]=it.unit_price;});});
+  const invoiceItems={};const invoicePrices={};
+  (monthData.invoice?.items||[]).forEach(it=>{invoiceItems[it.name]=(invoiceItems[it.name]||0)+(it.quantity||0);if(it.unit_price)invoicePrices[it.name]=it.unit_price;});
+  
+  const allNames=new Set([...Object.keys(deliveryTotals),...Object.keys(invoiceItems)]);
+  const rows=[[`דוח בקרה — ${supplier} · ${monthHe}`,'','','','',''],[`הופק: ${new Date().toLocaleDateString('he-IL')}`,'','','','',''],[''],['מוצר','כמות תעודות','כמות חשבונית','הפרש כמות','מחיר תעודות','מחיר חשבונית','הפרש מחיר','סטטוס']];
+  allNames.forEach(name=>{
+    const dq=deliveryTotals[name]||0,iq=invoiceItems[name]||0;
+    const dp=deliveryPrices[name],ip=invoicePrices[name];
+    const qdiff=iq-dq,pdiff=(dp&&ip)?Math.round((ip-dp)*100)/100:null;
+    const status=(Math.abs(qdiff)<0.01&&(!pdiff||Math.abs(pdiff)<0.01))?'✅ תקין':'🔴 חריגה';
+    rows.push([name,dq,iq,qdiff===0?0:qdiff,dp||'—',ip||'—',pdiff===null?'—':pdiff,status]);
+  });
+  
+  const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:40},{wch:12},{wch:12},{wch:12},{wch:12},{wch:12},{wch:12},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,'בקרה');
+  XLSX.writeFile(wb,`בקרה_${supplier}_${month}.xlsx`);
+}
+
 </script>
 </body>
 </html>
