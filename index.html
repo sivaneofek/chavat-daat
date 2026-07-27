@@ -322,6 +322,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a52}
       <div><label class="f-label">מקסימום</label><input class="f-input" id="f-max" type="number" min="0" placeholder="20"></div>
     </div>
     <label class="f-label">יחידת מידה</label><input class="f-input" id="f-unit" placeholder="יח'">
+    <div class="f-grid">
+      <div><label class="f-label">ספק</label><input class="f-input" id="f-supplier" placeholder="וטמרקט"></div>
+      <div><label class="f-label">מחיר ללא מע"מ ₪</label><input class="f-input" id="f-price" type="number" step="0.01" placeholder="0.00"></div>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-outline" id="btn-cancel-product">ביטול</button>
       <button class="btn btn-primary" id="btn-save-product">שמור</button>
@@ -659,12 +663,7 @@ function checkOverdue(orderedAt){
   return days>3?` <span style="color:#c0392b;font-weight:600">⚠️ ${Math.floor(days)} ימים — האם הגיע?</span>`:'';
 }
 
-function addOrder(name,qty,unit,dept){
-  const supplier=prompt('באיזה ספק להזמין?','וטמרקט');
-  if(!supplier)return;
-  orders.push({name,qty,unit,dept,supplier,status:'pending',createdAt:Date.now()});
-  saveOrders();renderOrders();toast('נוסף לרשימת הזמנה');
-}
+
 
 function setOrderStatus(idx,status,supplier){
   orders[idx].status=status;
@@ -834,7 +833,7 @@ function renderProducts(){
   el.innerHTML=html;
 }
 document.getElementById('p-search').oninput=renderProducts;
-document.getElementById('btn-add').onclick=()=>{editId=null;document.getElementById('m-product-title').textContent='הוספת מוצר';['f-name','f-cat','f-min','f-max','f-unit'].forEach(i=>document.getElementById(i).value='');document.getElementById('f-dept').value='reception';openM('m-product');};
+document.getElementById('btn-add').onclick=()=>{editId=null;document.getElementById('m-product-title').textContent='הוספת מוצר';['f-name','f-cat','f-min','f-max','f-unit','f-supplier','f-price'].forEach(i=>document.getElementById(i).value='');document.getElementById('f-dept').value='reception';openM('m-product');};
 document.getElementById('btn-cancel-product').onclick=()=>closeM('m-product');
 document.getElementById('btn-save-product').onclick=async function(){
   const name=document.getElementById('f-name').value.trim();const cat=document.getElementById('f-cat').value.trim();
@@ -843,11 +842,13 @@ document.getElementById('btn-save-product').onclick=async function(){
   if(!name){document.getElementById('f-name').focus();return;}
   const dup=products.find(p=>p.name.toLowerCase()===name.toLowerCase()&&p.id!=editId);
   if(dup){toast('מוצר זה כבר קיים ב'+DEPTS[dup.department]);return;}
-  if(editId){await db.from('products').update({name,category:cat,department:dept,min_stock:min,max_stock:max,unit}).eq('id',editId);toast('עודכן');}
-  else{await db.from('products').insert({name,category:cat,department:dept,min_stock:min,max_stock:max,unit});toast('נוסף');}
+  const supplier=document.getElementById('f-supplier').value.trim();
+  const price=parseFloat(document.getElementById('f-price').value)||null;
+  if(editId){await db.from('products').update({name,category:cat,department:dept,min_stock:min,max_stock:max,unit,supplier,price}).eq('id',editId);toast('עודכן');}
+  else{await db.from('products').insert({name,category:cat,department:dept,min_stock:min,max_stock:max,unit,supplier,price});toast('נוסף');}
   closeM('m-product');await loadProducts();renderProducts();
 };
-function openEdit(id){const p=products.find(x=>x.id==id);if(!p)return;editId=id;document.getElementById('m-product-title').textContent='עריכת מוצר';document.getElementById('f-name').value=p.name;document.getElementById('f-cat').value=p.category;document.getElementById('f-min').value=p.min_stock;document.getElementById('f-max').value=p.max_stock||'';document.getElementById('f-unit').value=p.unit;document.getElementById('f-dept').value=p.department;openM('m-product');}
+function openEdit(id){const p=products.find(x=>x.id==id);if(!p)return;editId=id;document.getElementById('m-product-title').textContent='עריכת מוצר';document.getElementById('f-name').value=p.name;document.getElementById('f-cat').value=p.category;document.getElementById('f-min').value=p.min_stock;document.getElementById('f-max').value=p.max_stock||'';document.getElementById('f-unit').value=p.unit;document.getElementById('f-dept').value=p.department;document.getElementById('f-supplier').value=p.supplier||'';document.getElementById('f-price').value=p.price||'';openM('m-product');}
 function openMove(id){moveId=id;const p=products.find(x=>x.id==id);document.getElementById('m-move-name').textContent=p.name;let html='';Object.entries(DEPTS).forEach(([k,n])=>{const cur=k===p.department;html+=`<button class="move-btn ${cur?'cur':''}" ${cur?'':'onclick="doMove(\''+k+'\')"'}>${n}${cur?' ← נוכחית':''}</button>`;});document.getElementById('m-move-list').innerHTML=html;openM('m-move');}
 async function doMove(dept){await db.from('products').update({department:dept}).eq('id',moveId);closeM('m-move');toast('הועבר');await loadProducts();renderProducts();}
 function openDel(id){delId=id;const p=products.find(x=>x.id==id);document.getElementById('m-del-name').textContent=p?p.name:'';openM('m-delete');}
