@@ -553,6 +553,15 @@ function renderReports(){
   el.innerHTML=html;
 }
 
+async function deleteReport(id){
+  if(!confirm('למחוק את הדיווח הזה לצמיתות?'))return;
+  await db.from('report_items').delete().eq('report_id',id);
+  await db.from('inventory_reports').delete().eq('id',id);
+  reports=reports.filter(r=>r.id!==id);
+  renderReports();
+  toast('הדיווח נמחק');
+}
+
 function resolveUrgent(i){urgents[i].resolved=true;saveUrgents();renderReports();}
 
 let currentReportForOrder=null;
