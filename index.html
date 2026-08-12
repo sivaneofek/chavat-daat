@@ -416,6 +416,11 @@ let currentArrivalOrderId=null;
 function saveOrders(){localStorage.setItem('orders_v1',JSON.stringify(orders));}
 function saveUrgents(){localStorage.setItem('urgents_v1',JSON.stringify(urgents));}
 function saveIssues(){localStorage.setItem('issues_v1',JSON.stringify(supplierIssues));}
+// Safely escape a string for embedding inside a single-quoted JS string
+// literal within an HTML onclick="..." attribute. Without this, values
+// containing ' (e.g. the default unit "יח'") or " (e.g. "מ"ל") break the
+// inline handler's syntax and the click silently does nothing.
+function jsAttrEsc(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/\n/g,' ');}
 
 // ── UTILS ──────────────────────────────────────────────────
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
@@ -547,6 +552,7 @@ function renderReports(){
           ${u2>0?`<span class="badge badge-gray">${u2} לא נבדקו</span>`:''}
           ${allOk?`<span class="badge badge-green">✓ תקין</span>`:''}
         </div>
+        <button onclick="event.stopPropagation();deleteReport(${r.id})" style="background:none;border:none;color:#c0392b;font-size:16px;cursor:pointer;padding:4px 6px;flex-shrink:0">🗑</button>
       </div>
     </div>`;
   });
@@ -591,7 +597,7 @@ function viewReport(id){
       <td style="text-align:center;font-weight:700;color:${orderQty>0?'#c0392b':'#1e8449'}">${orderQty>0?orderQty:'✓'}</td>
       <td style="font-size:10px;color:#666">${note}</td>
       <td style="text-align:center">
-        ${canOrder?`<button onclick="markOrdered('${it.product_name.replace(/'/g,"\'")}',${orderQty},'${it.unit||''}','${r.department}',${i})" 
+        ${canOrder?`<button onclick="markOrdered('${jsAttrEsc(it.product_name)}',${orderQty},'${jsAttrEsc(it.unit||'')}','${jsAttrEsc(r.department)}',${i})" 
           style="background:#e8f8f0;border:1px solid #1e8449;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:13px;color:#1e8449;font-weight:700">✓</button>`:
           alreadyOrdered?'<span style="color:#6b7c93;font-size:11px">הוזמן</span>':
           '<span style="color:#ccc">—</span>'}
@@ -691,7 +697,7 @@ function renderOrders(){
           <span class="status-chip ${statusMap[o.status]||'chip-pending'}">${statusLbl[o.status]||'ממתין'}</span>
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-          ${o.status==='pending'?`<button onclick="setOrderStatus(${idx},'ordered','${supplier.replace(/'/g,"\'")}');moveToShipments(${idx})" class="btn btn-sm btn-primary">✓ הוזמן</button>`:''}
+          ${o.status==='pending'?`<button onclick="setOrderStatus(${idx},'ordered','${jsAttrEsc(supplier)}');moveToShipments(${idx})" class="btn btn-sm btn-primary">✓ הוזמן</button>`:''}
           ${o.status==='ordered'?`<button onclick="openArrival(${idx})" class="btn btn-sm btn-green">📦 התקבל</button>`:''}
           <button onclick="removeOrder(${idx})" class="btn btn-sm btn-outline" style="color:#c0392b;border-color:#c0392b;font-size:11px">הסר</button>
         </div>
@@ -1227,23 +1233,18 @@ async function uploadInvoice(){
 {"invoice_number":"מספר חשבונית","items":[{"name":"שם המוצר","quantity":כמות,"unit":"יחידה","unit_price":מחיר_ליחידה,"total_price":סה"כ}],"total":סה"כ_חשבונית}
 רק JSON, ללא טקסט נוסף.`;
 
-    const response=await fetch('https://api.anthropic.com/v1/messages',{
+    const response=await fetch(`${SUPABASE_URL}/functions/v1/parse-invoice`,{
       method:'POST',
-      headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:4000,
-        messages:[{role:'user',content:[
-          {type:srcType,source:{type:'base64',media_type:mediaType,data:base64}},
-          {type:'text',text:prompt}
-        ]}]
-      })
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`,'apikey':SUPABASE_KEY},
+      body:JSON.stringify({base64,mediaType,srcType,prompt})
     });
 
     const data=await response.json();
-    const text=data.content?.map(c=>c.text||'').join('');
-    const clean=text.replace(/```json|```/g,'').trim();
-    const parsed=JSON.parse(clean);
+    if(!response.ok||data.error){
+      throw new Error(data.error||`שגיאה מה-API (קוד ${response.status})`);
+    }
+    const parsed=data.parsed;
+    if(!parsed)throw new Error('לא התקבל תוכן תקין מה-API');
 
     // Store the data
     const key=`${supplier}_${month}_${type}`;
