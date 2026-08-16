@@ -1146,16 +1146,29 @@ async function submitReport(){
   const dp=products.filter(p=>p.department===currentDept);
   let ok=0,low=0,crit=0,unk=0,toOrder=0;
   const items=dp.map(p=>{
-    const v=depValues[p.id];const qty=v!==undefined&&v!==''?parseInt(v):null;
-    const st=getStatus(v,p.min_stock);const diff=qty!==null?qty-p.min_stock:null;
+    const v=depValues[p.id];const rawQty=v!==undefined&&v!==''?parseInt(v):null;
+    const qty=(rawQty!==null&&isNaN(rawQty))?null:rawQty;
+    const st=getStatus(v,p.min_stock);const diff=qty!==null?qty-(p.min_stock||0):null;
     const orderQty=diff!==null&&diff<0?Math.abs(diff):0;
     if(st==='ok')ok++;else if(st==='low')low++;else if(st==='crit')crit++;else unk++;
     if(orderQty>0)toOrder++;
-    return{product_id:p.id,product_name:p.name,category:p.category||'',actual_qty:qty,min_stock:p.min_stock,unit:p.unit,status:st==='unk'?'unknown':st,order_qty:orderQty,note:depNotes[p.id]||''};
+    // Defensive defaults: a null/undefined value in any of these (e.g. a
+    // product saved without a unit) can make the WHOLE batch insert below
+    // fail silently, wiping out every item in this report — not just the
+    // one bad row. Never send raw nulls for text fields.
+    return{product_id:p.id,product_name:p.name||'',category:p.category||'',actual_qty:qty,min_stock:p.min_stock||0,unit:p.unit||'',status:st==='unk'?'unknown':st,order_qty:orderQty,note:depNotes[p.id]||''};
   });
   const btn=document.getElementById('btn-submit');btn.textContent='שולח...';btn.disabled=true;
-  const{data:rep}=await db.from('inventory_reports').insert({department:currentDept,submitted_by:DEPTS[currentDept],total_items:dp.length,ok_count:ok,low_count:low,critical_count:crit,unknown_count:unk,items_to_order:toOrder}).select().single();
-  if(rep)await db.from('report_items').insert(items.map(i=>({...i,report_id:rep.id})));
+  const{data:rep,error:repErr}=await db.from('inventory_reports').insert({department:currentDept,submitted_by:DEPTS[currentDept],total_items:dp.length,ok_count:ok,low_count:low,critical_count:crit,unknown_count:unk,items_to_order:toOrder}).select().single();
+  if(repErr||!rep){
+    alert('❌ שליחת הדיווח נכשלה: '+(repErr?.message||'שגיאה לא ידועה')+'\n\nהדיווח לא נשמר. נסי שוב, ואם זה חוזר — שלחי צילום מסך של ההודעה הזו.');
+    btn.textContent='שלח דיווח מלאי ←';btn.disabled=false;
+    return;
+  }
+  const{error:itemsErr}=await db.from('report_items').insert(items.map(i=>({...i,report_id:rep.id})));
+  if(itemsErr){
+    alert('⚠️ הדיווח נוצר אך פרטי המוצרים לא נשמרו: '+itemsErr.message+'\n\nחשוב: פני לאדמין עם ההודעה הזו — הדיווח יופיע ברשימה אך יהיה ריק. סביר שאחד המוצרים במחלקה חסר שדה (למשל יחידת מידה).');
+  }
   lastReport={...rep,report_items:items,created_at:new Date().toISOString()};
   let html=`<div style="font-size:13px;font-weight:700;margin-bottom:10px">סיכום — ${DEPTS[currentDept]}</div>`;
   if(toOrder>0)html+=`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #e0e6ed;font-size:13px"><span>🛒 להזמנה</span><span style="color:#c0392b;font-weight:700">${toOrder}</span></div>`;
