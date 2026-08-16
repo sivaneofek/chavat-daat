@@ -1156,7 +1156,7 @@ async function submitReport(){
     // product saved without a unit) can make the WHOLE batch insert below
     // fail silently, wiping out every item in this report — not just the
     // one bad row. Never send raw nulls for text fields.
-    return{product_id:p.id,product_name:p.name||'',category:p.category||'',actual_qty:qty,min_stock:p.min_stock||0,unit:p.unit||'',status:st==='unk'?'unknown':st,order_qty:orderQty,note:depNotes[p.id]||''};
+    return{product_id:p.id,product_name:p.name||'',category:p.category||'',actual_qty:qty,min_stock:p.min_stock||0,unit:p.unit||'',status:st==='unk'?'unknown':st==='crit'?'critical':st,order_qty:orderQty,note:depNotes[p.id]||''};
   });
   const btn=document.getElementById('btn-submit');btn.textContent='שולח...';btn.disabled=true;
   const{data:rep,error:repErr}=await db.from('inventory_reports').insert({department:currentDept,submitted_by:DEPTS[currentDept],total_items:dp.length,ok_count:ok,low_count:low,critical_count:crit,unknown_count:unk,items_to_order:toOrder}).select().single();
