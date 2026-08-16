@@ -410,7 +410,7 @@ const SUPPLIERS_HE={vetmarket:'וטמרקט',medimarket:'מדימרקט',linvitz
 let products=[],reports=[],depValues={},depNotes={};
 let currentDept='',editId=null,delId=null,moveId=null;
 let currentDeptFilter='all',lastReport=null;
-let orders=JSON.parse(localStorage.getItem('orders_v1')||'[]');
+let orders=[];
 let urgents=JSON.parse(localStorage.getItem('urgents_v1')||'[]');
 let supplierIssues=JSON.parse(localStorage.getItem('issues_v1')||'[]');
 let currentArrivalOrderId=null;
@@ -486,12 +486,23 @@ function updateDeadline(){
 // ── DATA ───────────────────────────────────────────────────
 async function loadProducts(){const{data}=await db.from('products').select('*').eq('is_active',true).order('department').order('category').order('name');products=data||[];}
 async function loadReports(){const since=new Date(Date.now()-30*24*60*60*1000).toISOString();const{data}=await db.from('inventory_reports').select('*,report_items(*)').gte('created_at',since).order('created_at',{ascending:false});reports=data||[];}
+async function loadOrders(){
+  const{data,error}=await db.from('orders').select('*').order('created_at',{ascending:true});
+  if(error){console.error('loadOrders failed',error);return;}
+  orders=(data||[]).map(o=>({
+    id:o.id,name:o.name,qty:o.qty,unit:o.unit,dept:o.dept,supplier:o.supplier,status:o.status,
+    fromReport:o.from_report,arrivedQty:o.arrived_qty,
+    createdAt:o.created_at?new Date(o.created_at).getTime():Date.now(),
+    orderedAt:o.ordered_at?new Date(o.ordered_at).getTime():null,
+    receivedAt:o.received_at?new Date(o.received_at).getTime():null
+  }));
+}
 
 // ── LOGIN ──────────────────────────────────────────────────
 async function adminLogin(){
   if(document.getElementById('admin-pass').value!==ADMIN_PASS){toast('סיסמה שגויה');return;}
   show('s-admin');
-  await loadProducts();await loadReports();
+  await loadProducts();await loadReports();await loadOrders();await loadInvoiceData();
   switchTab('rep',document.getElementById('tab-rep-btn'));
   renderReports();
 }
@@ -514,7 +525,7 @@ document.getElementById('btn-logout-deputy').onclick=()=>show('s-login');
 document.getElementById('btn-back').onclick=()=>show('s-login');
 
 // ── ADMIN TABS ─────────────────────────────────────────────
-function switchTab(name,el){
+async function switchTab(name,el){
   document.querySelectorAll('#s-admin .tab').forEach(t=>t.classList.remove('on'));
   el.classList.add('on');
   const tabs=['rep','ord','ship','check','prod','hist','inv'];
@@ -524,11 +535,12 @@ function switchTab(name,el){
     const isActive=t===name;
     el2.style.display=isActive?(t==='prod'?'flex':'block'):'none';
   });
-  if(name==='ord')renderOrders();
-  if(name==='ship')renderShipments();
+  if(name==='ord'){await loadOrders();renderOrders();}
+  if(name==='ship'){await loadOrders();renderShipments();}
   if(name==='check')renderSupplierCheck();
   if(name==='prod')renderProducts();
   if(name==='hist')renderHistory();
+  if(name==='inv')await loadInvoiceData();
 }
 document.getElementById('tab-rep-btn').onclick=function(){switchTab('rep',this);};
 document.getElementById('tab-ord-btn').onclick=function(){switchTab('ord',this);};
@@ -645,23 +657,24 @@ function viewReport(id){
   openM('m-report');
 }
 
-function markOrdered(name,qty,unit,dept,rowIdx){
+async function markOrdered(name,qty,unit,dept,rowIdx){
   const prod=products.find(p=>p.name===name);
   const supplier=prod?.supplier||'';
-  orders.push({name,qty,unit,dept,supplier,status:'pending',createdAt:Date.now(),fromReport:true});
-  saveOrders();
+  const{error}=await db.from('orders').insert({name,qty,unit,dept,supplier,status:'pending',from_report:true});
+  if(error){alert('❌ לא הצלחנו לשמור את ההזמנה: '+error.message);return;}
+  await loadOrders();
   // Update row visually
   const row=document.getElementById('rrow-'+rowIdx);
   if(row){const lastCell=row.querySelector('td:last-child');if(lastCell)lastCell.innerHTML='<span style="color:#1e8449;font-weight:600">✓ הוזמן</span>';}
   toast('✓ הועבר להזמנות — '+name);
 }
 
-function markOrderedManual(name,unit,dept,rowIdx){
+async function markOrderedManual(name,unit,dept,rowIdx){
   const raw=prompt('המוצר "'+name+'" במלאי תקין. כמה יחידות ('+(unit||'יח׳')+') להזמין בכל זאת?','1');
   if(raw===null)return; // cancelled
   const qty=parseInt(raw);
   if(isNaN(qty)||qty<=0){alert('נא להזין מספר חיובי');return;}
-  markOrdered(name,qty,unit,dept,rowIdx);
+  await markOrdered(name,qty,unit,dept,rowIdx);
 }
 
 function exportExcel(r){
@@ -835,14 +848,22 @@ function checkOverdue(orderedAt){
 
 
 
-function setOrderStatus(idx,status,supplier){
-  orders[idx].status=status;
-  if(status==='ordered')orders[idx].orderedAt=Date.now();
-  saveOrders();renderOrders();
+async function setOrderStatus(idx,status,supplier){
+  const o=orders[idx];if(!o)return;
+  const patch={status};
+  if(status==='ordered')patch.ordered_at=new Date().toISOString();
+  const{error}=await db.from('orders').update(patch).eq('id',o.id);
+  if(error){alert('❌ עדכון הסטטוס נכשל: '+error.message);return;}
+  await loadOrders();renderOrders();
   if(status==='ordered')toast('סומן כהוזמן');
 }
 
-function removeOrder(idx){orders.splice(idx,1);saveOrders();renderOrders();}
+async function removeOrder(idx){
+  const o=orders[idx];if(!o)return;
+  const{error}=await db.from('orders').delete().eq('id',o.id);
+  if(error){alert('❌ הסרת ההזמנה נכשלה: '+error.message);return;}
+  await loadOrders();renderOrders();
+}
 
 // ── ARRIVAL MODAL ──────────────────────────────────────────
 function openArrival(idx){
@@ -874,24 +895,27 @@ function setArrival(status,el){
   if(pf)pf.style.display=status==='partial'?'block':'none';
 }
 
-document.getElementById('btn-confirm-arr').onclick=function(){
+document.getElementById('btn-confirm-arr').onclick=async function(){
   const idx=currentArrivalOrderId;
-  const o=orders[idx];
+  const o=orders[idx];if(!o)return;
   if(arrivalStatus==='yes'){
-    orders[idx].status='received';orders[idx].receivedAt=Date.now();
-    saveOrders();closeM('m-arrival');renderOrders();toast('✅ משלוח אושר כהתקבל');
+    const{error}=await db.from('orders').update({status:'received',received_at:new Date().toISOString()}).eq('id',o.id);
+    if(error){alert('❌ נכשל: '+error.message);return;}
+    await loadOrders();closeM('m-arrival');renderOrders();toast('✅ משלוח אושר כהתקבל');
   } else if(arrivalStatus==='no'){
-    orders[idx].status='pending';
+    const{error}=await db.from('orders').update({status:'pending'}).eq('id',o.id);
+    if(error){alert('❌ נכשל: '+error.message);return;}
     supplierIssues.push({name:o.name,supplier:o.supplier||'',qty:o.qty,unit:o.unit||'',note:'לא הגיע כלל',ts:Date.now(),resolved:false});
-    saveIssues();saveOrders();closeM('m-arrival');renderOrders();renderSupplierCheck();
+    saveIssues();await loadOrders();closeM('m-arrival');renderOrders();renderSupplierCheck();
     toast('⚠️ עבר לבדיקה מול ספק');
   } else {
     const arrivedQty=parseInt(document.getElementById('partial-qty').value)||0;
     const note=document.getElementById('partial-note').value;
-    orders[idx].status='partial';orders[idx].receivedAt=Date.now();orders[idx].arrivedQty=arrivedQty;
+    const{error}=await db.from('orders').update({status:'partial',received_at:new Date().toISOString(),arrived_qty:arrivedQty}).eq('id',o.id);
+    if(error){alert('❌ נכשל: '+error.message);return;}
     const missing=o.qty-arrivedQty;
     supplierIssues.push({name:o.name,supplier:o.supplier||'',ordered:o.qty,arrived:arrivedQty,missing,unit:o.unit||'',note,ts:Date.now(),resolved:false});
-    saveIssues();saveOrders();closeM('m-arrival');renderOrders();renderSupplierCheck();
+    saveIssues();await loadOrders();closeM('m-arrival');renderOrders();renderSupplierCheck();
     toast(`⚠️ חוסר של ${missing} יחידות עבר לבדיקה`);
   }
 };
@@ -943,24 +967,27 @@ function renderShipments(){
   el.innerHTML=html;
 }
 
-function confirmArrivalInline(idx,type){
-  const o=orders[idx];
+async function confirmArrivalInline(idx,type){
+  const o=orders[idx];if(!o)return;
   const qtyEl=document.getElementById('arr-qty-'+idx);
   const dateEl=document.getElementById('arr-date-'+idx);
   const arrivedQty=qtyEl?parseInt(qtyEl.value)||o.qty:o.qty;
   const arrivedDate=dateEl?dateEl.value:new Date().toISOString().slice(0,10);
   if(type==='full'){
-    orders[idx].status='received';orders[idx].arrivedQty=arrivedQty;orders[idx].receivedAt=new Date(arrivedDate).getTime();
-    saveOrders();renderShipments();toast('✅ סומן כהתקבל');
+    const{error}=await db.from('orders').update({status:'received',arrived_qty:arrivedQty,received_at:new Date(arrivedDate).toISOString()}).eq('id',o.id);
+    if(error){alert('❌ נכשל: '+error.message);return;}
+    await loadOrders();renderShipments();toast('✅ סומן כהתקבל');
   } else if(type==='partial'){
-    orders[idx].status='partial';orders[idx].arrivedQty=arrivedQty;orders[idx].receivedAt=new Date(arrivedDate).getTime();
+    const{error}=await db.from('orders').update({status:'partial',arrived_qty:arrivedQty,received_at:new Date(arrivedDate).toISOString()}).eq('id',o.id);
+    if(error){alert('❌ נכשל: '+error.message);return;}
     const missing=o.qty-arrivedQty;
     if(missing>0){supplierIssues.push({name:o.name,supplier:o.supplier||'',ordered:o.qty,arrived:arrivedQty,missing,unit:o.unit||'',note:'הגיע חלקי',ts:Date.now(),resolved:false});saveIssues();}
-    saveOrders();renderShipments();toast('⚠️ סומן כחלקי');
+    await loadOrders();renderShipments();toast('⚠️ סומן כחלקי');
   } else {
-    orders[idx].status='pending';
+    const{error}=await db.from('orders').update({status:'pending'}).eq('id',o.id);
+    if(error){alert('❌ נכשל: '+error.message);return;}
     supplierIssues.push({name:o.name,supplier:o.supplier||'',qty:o.qty,unit:o.unit||'',note:'לא הגיע כלל',ts:Date.now(),resolved:false});
-    saveIssues();saveOrders();renderShipments();renderSupplierCheck();toast('❌ עבר לבדיקה מול ספק');
+    saveIssues();await loadOrders();renderShipments();renderSupplierCheck();toast('❌ עבר לבדיקה מול ספק');
   }
 }
 
@@ -1286,8 +1313,22 @@ document.getElementById('tab-inv-btn').onclick=function(){switchTab('inv',this);
 })();
 
 // Storage for invoice data
-let invoiceData=JSON.parse(localStorage.getItem('invoices_v1')||'{}');
-function saveInvoiceData(){localStorage.setItem('invoices_v1',JSON.stringify(invoiceData));}
+let invoiceData={};
+async function loadInvoiceData(){
+  const{data,error}=await db.from('invoice_documents').select('*').order('uploaded_at',{ascending:true});
+  if(error){console.error('loadInvoiceData failed',error);return;}
+  const rebuilt={};
+  (data||[]).forEach(row=>{
+    if(!rebuilt[row.month])rebuilt[row.month]={};
+    if(!rebuilt[row.month][row.supplier])rebuilt[row.month][row.supplier]={deliveries:[],invoice:null};
+    if(row.doc_type==='delivery'){
+      rebuilt[row.month][row.supplier].deliveries.push({id:row.id,filename:row.filename,uploadedAt:new Date(row.uploaded_at).getTime(),items:row.items||[]});
+    }else{
+      rebuilt[row.month][row.supplier].invoice={id:row.id,filename:row.filename,uploadedAt:new Date(row.uploaded_at).getTime(),number:row.invoice_number,total:row.total,items:row.items||[]};
+    }
+  });
+  invoiceData=rebuilt;
+}
 
 async function uploadInvoice(){
   const file=document.getElementById('inv-file').files[0];
@@ -1336,22 +1377,22 @@ async function uploadInvoice(){
     const parsed=data.parsed;
     if(!parsed)throw new Error('לא התקבל תוכן תקין מה-API');
 
-    // Store the data
-    const key=`${supplier}_${month}_${type}`;
-    if(!invoiceData[month])invoiceData[month]={};
-    if(!invoiceData[month][supplier])invoiceData[month][supplier]={deliveries:[],invoice:null};
-    
+    // Store the data in Supabase (shared — visible from any device)
     if(type==='delivery'){
-      invoiceData[month][supplier].deliveries.push({
-        filename:file.name,uploadedAt:Date.now(),items:parsed.items||[]
+      const{error:insErr}=await db.from('invoice_documents').insert({
+        month,supplier,doc_type:'delivery',filename:file.name,items:parsed.items||[]
       });
+      if(insErr)throw new Error('שמירת התעודה נכשלה: '+insErr.message);
     } else {
-      invoiceData[month][supplier].invoice={
-        filename:file.name,uploadedAt:Date.now(),
-        number:parsed.invoice_number,total:parsed.total,items:parsed.items||[]
-      };
+      // Only one "current" central invoice per month+supplier — replace the old one
+      await db.from('invoice_documents').delete().eq('month',month).eq('supplier',supplier).eq('doc_type','invoice');
+      const{error:insErr}=await db.from('invoice_documents').insert({
+        month,supplier,doc_type:'invoice',filename:file.name,
+        invoice_number:parsed.invoice_number||null,total:parsed.total||null,items:parsed.items||[]
+      });
+      if(insErr)throw new Error('שמירת החשבונית נכשלה: '+insErr.message);
     }
-    saveInvoiceData();
+    await loadInvoiceData();
 
     // Show results
     const typeHe=type==='delivery'?'תעודת משלוח':'חשבונית מרכזת';
