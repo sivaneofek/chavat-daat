@@ -281,12 +281,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a52}
     <span id="deadline-cd" class="dl-ok">טוען...</span>
   </div>
   <div id="dep-not-sent" class="alert-red" style="margin:.7rem .9rem 0;display:none">⚠️ טרם שלחת ספירת מלאי השבוע!</div>
+  <div id="dep-draft-banner" class="alert-blue" style="margin:.7rem .9rem 0;display:none"></div>
   <div style="padding:.6rem .9rem">
     <button class="urgent-btn" onclick="openUrgent()">🚨 דיווח חוסר דחוף</button>
   </div>
   <div class="scroll" id="dep-items"></div>
-  <div class="fab">
-    <button class="btn btn-primary" id="btn-submit" style="margin:0">שלח דיווח מלאי ←</button>
+  <div class="fab" style="display:flex;gap:8px">
+    <button class="btn btn-outline" id="btn-save-draft" style="margin:0;flex:0 0 auto" onclick="saveDraft()">💾 שמור טיוטה</button>
+    <button class="btn btn-primary" id="btn-submit" style="margin:0;flex:1">שלח דיווח מלאי ←</button>
   </div>
 </div>
 
@@ -427,6 +429,34 @@ function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.re
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(()=>t.className='toast',2600);}
 function openM(id){document.getElementById(id).classList.add('open');}
 function closeM(id){document.getElementById(id).classList.remove('open');}
+function draftKey(dept){return 'draft_v1_'+dept;}
+function saveDraft(silent){
+  localStorage.setItem(draftKey(currentDept),JSON.stringify({values:depValues,notes:depNotes,savedAt:Date.now()}));
+  if(!silent)toast('💾 הטיוטה נשמרה — אפשר להמשיך מאותה נקודה בכל זמן');
+}
+function loadDraftIfExists(){
+  const raw=localStorage.getItem(draftKey(currentDept));
+  const banner=document.getElementById('dep-draft-banner');
+  if(!raw){if(banner)banner.style.display='none';return;}
+  let draft;
+  try{draft=JSON.parse(raw);}catch(e){localStorage.removeItem(draftKey(currentDept));if(banner)banner.style.display='none';return;}
+  depValues={...(draft.values||{})};depNotes={...(draft.notes||{})};
+  if(banner){
+    const mins=Math.round((Date.now()-draft.savedAt)/60000);
+    const when=mins<1?'לפני רגע':mins<60?('לפני '+mins+' דק׳'):('לפני '+Math.round(mins/60)+' שעות');
+    banner.innerHTML='📝 שוחזרה טיוטה שמורה ('+when+') · <a href="#" onclick="discardDraft();return false;" style="color:#1a5276;text-decoration:underline;font-weight:600">להתחיל ספירה חדשה מאפס</a>';
+    banner.style.display='block';
+  }
+}
+function discardDraft(){
+  if(!confirm('למחוק את הטיוטה השמורה ולהתחיל ספירה חדשה מאפס? לא ניתן לשחזר אחרי מחיקה.'))return;
+  localStorage.removeItem(draftKey(currentDept));
+  depValues={};depNotes={};
+  renderDepItems();
+  const banner=document.getElementById('dep-draft-banner');if(banner)banner.style.display='none';
+  toast('הטיוטה נמחקה, מתחילים מאפס');
+}
+function clearDraft(dept){localStorage.removeItem(draftKey(dept));}
 function getStatus(v,min){if(v===''||v===null||v===undefined)return'unk';const n=parseInt(v);if(isNaN(n))return'unk';if(n===0||n<min*.5)return'crit';if(n<min*.8)return'low';return'ok';}
 function getDiff(actual,min){if(actual===null||actual===undefined||actual==='')return null;return parseInt(actual)-(parseInt(min)||0);}
 function fmtDate(ts){return new Date(ts).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
@@ -475,6 +505,7 @@ document.getElementById('btn-deputy').onclick=async function(){
   updateDeadline();setInterval(updateDeadline,60000);
   await loadProducts();
   checkIfSentThisWeek();
+  loadDraftIfExists();
   renderDepItems();
   updateSubmitBtn();
 };
@@ -1158,16 +1189,40 @@ async function submitReport(){
     // one bad row. Never send raw nulls for text fields.
     return{product_id:p.id,product_name:p.name||'',category:p.category||'',actual_qty:qty,min_stock:p.min_stock||0,unit:p.unit||'',status:st==='unk'?'unknown':st==='crit'?'critical':st,order_qty:orderQty,note:depNotes[p.id]||''};
   });
-  const btn=document.getElementById('btn-submit');btn.textContent='שולח...';btn.disabled=true;
-  const{data:rep,error:repErr}=await db.from('inventory_reports').insert({department:currentDept,submitted_by:DEPTS[currentDept],total_items:dp.length,ok_count:ok,low_count:low,critical_count:crit,unknown_count:unk,items_to_order:toOrder}).select().single();
-  if(repErr||!rep){
-    alert('❌ שליחת הדיווח נכשלה: '+(repErr?.message||'שגיאה לא ידועה')+'\n\nהדיווח לא נשמר. נסי שוב, ואם זה חוזר — שלחי צילום מסך של ההודעה הזו.');
-    btn.textContent='שלח דיווח מלאי ←';btn.disabled=false;
+  const btn=document.getElementById('btn-submit');
+  const originalText=btn.textContent;
+  btn.textContent='שולח...';btn.disabled=true;
+  // A slow/paused Supabase connection (free-tier projects "sleep" after
+  // inactivity) or a flaky network can make the request hang with no
+  // error at all — the button would just sit there forever with no
+  // feedback. This timeout guarantees the person always sees SOMETHING
+  // within 20 seconds: either success, a real error, or a timeout notice.
+  const withTimeout=(promise,ms)=>Promise.race([promise,new Promise((_,rej)=>setTimeout(()=>rej(new Error('התחברות למסד הנתונים לוקחת יותר מדי זמן')),ms))]);
+  let rep,repErr;
+  try{
+    const res=await withTimeout(db.from('inventory_reports').insert({department:currentDept,submitted_by:DEPTS[currentDept],total_items:dp.length,ok_count:ok,low_count:low,critical_count:crit,unknown_count:unk,items_to_order:toOrder}).select().single(),20000);
+    rep=res.data;repErr=res.error;
+  }catch(e){
+    alert('❌ שליחת הדיווח נכשלה: '+e.message+'\n\nיתכן שהאתר "מתעורר" אחרי חוסר פעילות — נסי שוב בעוד כמה שניות. אם זה חוזר, שלחי לי צילום מסך של ההודעה הזו.');
+    btn.textContent=originalText;btn.disabled=false;
     return;
   }
-  const{error:itemsErr}=await db.from('report_items').insert(items.map(i=>({...i,report_id:rep.id})));
+  if(repErr||!rep){
+    alert('❌ שליחת הדיווח נכשלה: '+(repErr?.message||'שגיאה לא ידועה')+'\n\nהדיווח לא נשמר. נסי שוב, ואם זה חוזר — שלחי צילום מסך של ההודעה הזו.');
+    btn.textContent=originalText;btn.disabled=false;
+    return;
+  }
+  let itemsErr;
+  try{
+    const res=await withTimeout(db.from('report_items').insert(items.map(i=>({...i,report_id:rep.id}))),20000);
+    itemsErr=res.error;
+  }catch(e){
+    itemsErr={message:e.message};
+  }
   if(itemsErr){
-    alert('⚠️ הדיווח נוצר אך פרטי המוצרים לא נשמרו: '+itemsErr.message+'\n\nחשוב: פני לאדמין עם ההודעה הזו — הדיווח יופיע ברשימה אך יהיה ריק. סביר שאחד המוצרים במחלקה חסר שדה (למשל יחידת מידה).');
+    alert('⚠️ הדיווח נוצר אך פרטי המוצרים לא נשמרו: '+itemsErr.message+'\n\nחשוב: פני לאדמין עם ההודעה הזו — הדיווח יופיע ברשימה אך יהיה ריק. הטיוטה נשארה שמורה כדי שתוכלי לנסות שוב.');
+  }else{
+    clearDraft(currentDept);
   }
   lastReport={...rep,report_items:items,created_at:new Date().toISOString()};
   let html=`<div style="font-size:13px;font-weight:700;margin-bottom:10px">סיכום — ${DEPTS[currentDept]}</div>`;
