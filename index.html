@@ -181,6 +181,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a52}
   <!-- ORDERS TAB -->
   <div id="tab-ord" class="scroll" style="display:none">
     <div class="alert-blue">📋 רשימת הזמנה מבוססת על הדיווח האחרון. סמני "הוזמן" לאחר שהזמנת מהספק.</div>
+    <button class="btn btn-outline" style="margin-bottom:10px" onclick="openAddOrder()">➕ הוסיפי הזמנה ידנית (ללא ספירה)</button>
     <div id="ord-list"><div class="empty">אין פריטים להזמנה</div></div>
   </div>
 
@@ -345,6 +346,27 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#1a3a52}
   </div>
 </div>
 
+<div class="modal-bg" id="m-add-order">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">הזמנה ידנית</div>
+    <p style="font-size:12px;color:#6b7c93;margin-bottom:10px">להוספת מוצר ישירות להזמנות, בלי צורך בספירת מלאי מלאה</p>
+    <label class="f-label">שם מוצר</label>
+    <input class="f-input" id="ao-name" type="text" list="ao-products-list" placeholder="חפשי מוצר קיים או הקלידי שם חדש">
+    <datalist id="ao-products-list"></datalist>
+    <label class="f-label">כמות</label>
+    <input class="f-input" id="ao-qty" type="number" min="1" value="1">
+    <label class="f-label">יחידת מידה</label>
+    <input class="f-input" id="ao-unit" type="text" placeholder="יח׳">
+    <label class="f-label">ספק (אופציונלי)</label>
+    <input class="f-input" id="ao-supplier" type="text" placeholder="שם הספק">
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeM('m-add-order')">ביטול</button>
+      <button class="btn btn-primary" style="flex:1;margin:0" onclick="submitAddOrder()">הוסיפי להזמנות</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="m-delete">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -427,6 +449,35 @@ function jsAttrEsc(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(
 // ── UTILS ──────────────────────────────────────────────────
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(()=>t.className='toast',2600);}
+function openAddOrder(){
+  const list=document.getElementById('ao-products-list');
+  list.innerHTML=products.map(p=>`<option value="${p.name}">`).join('');
+  document.getElementById('ao-name').value='';
+  document.getElementById('ao-qty').value='1';
+  document.getElementById('ao-unit').value='';
+  document.getElementById('ao-supplier').value='';
+  openM('m-add-order');
+}
+document.getElementById('ao-name').addEventListener('input',function(){
+  const prod=products.find(p=>p.name===this.value);
+  if(prod){
+    document.getElementById('ao-unit').value=prod.unit||'';
+    document.getElementById('ao-supplier').value=prod.supplier||'';
+  }
+});
+async function submitAddOrder(){
+  const name=document.getElementById('ao-name').value.trim();
+  const qty=parseInt(document.getElementById('ao-qty').value);
+  const unit=document.getElementById('ao-unit').value.trim();
+  const supplier=document.getElementById('ao-supplier').value.trim();
+  if(!name){alert('נא להזין שם מוצר');return;}
+  if(isNaN(qty)||qty<=0){alert('נא להזין כמות חיובית');return;}
+  const{error}=await db.from('orders').insert({name,qty,unit,dept:'',supplier,status:'pending',from_report:false});
+  if(error){alert('❌ ההוספה נכשלה: '+error.message);return;}
+  closeM('m-add-order');
+  await loadOrders();renderOrders();
+  toast('✓ ההזמנה נוספה');
+}
 function openM(id){document.getElementById(id).classList.add('open');}
 function closeM(id){document.getElementById(id).classList.remove('open');}
 function draftKey(dept){return 'draft_v1_'+dept;}
